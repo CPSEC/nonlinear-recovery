@@ -5,7 +5,6 @@ import numpy as np
 
 from settings_baseline import quadruple_tank_bias
 from utils.controllers.LP_cvxpy import LP
-from utils.formal.zonotope import Zonotope
 from utils.observers.full_state_bound import Estimator
 
 # ready exp: lane_keeping,
@@ -25,7 +24,6 @@ for exp in exps:
 
     u_lo = exp.model.controller.control_lo
     u_up = exp.model.controller.control_up
-    U = Zonotope.from_box(u_lo, u_up)
     A = exp.model.sysd.A
     B = exp.model.sysd.B
     est = Estimator(A, B, max_k=150, epsilon=1e-7)
