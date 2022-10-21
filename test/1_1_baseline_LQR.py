@@ -59,7 +59,7 @@ for exp in exps:
                 'ddl': k, 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
                 'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
                 'control_lo': exp.control_lo, 'control_up': exp.control_up,
-                'ref': np.array([14, 14, 2, 2.5])
+                'ref': exp.recovery_ref
             }
             mpc = MPC(mpc_settings)
             _ = mpc.update(feedback_value=x_cur)
