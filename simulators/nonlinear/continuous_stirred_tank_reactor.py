@@ -1,7 +1,6 @@
-
 import numpy as np
 from utils import Simulator
-from utils.controllers.PID import PID
+from utils.controllers.PID_incremental import PID
 
 # Parameters:
 # Volumetric Flowrate (m^3/sec)
@@ -23,7 +22,8 @@ k0 = 7.2e10
 # A - Area - this value is specific for the U calculation (m^2)
 UA = 5e4
 
-def cstr(x, t, u, Tf=350, Caf=1):
+
+def cstr(t, x, u, Tf=350, Caf=1):
     # Inputs (3):
     # Temperature of cooling jacket (K)
     Tc = u
@@ -54,12 +54,13 @@ def cstr(x, t, u, Tf=350, Caf=1):
 
 
 # initial states
-x_0 = np.array([-1, 0, np.pi + 0.1, 0])
+x_0 = np.array([0.98, 280])
 
 # control parameters
 KP = 0.5 * 1.0
-KI = KP / (3 / 8.0)
-KD = - KP * 0.1
+KI =  KP / (3 / 8.0)
+KD =  - KP * 0.1
+u_0 = 274.57786
 control_limit = {
     'lo': np.array([250]),
     'up': np.array([350])
@@ -69,14 +70,14 @@ control_limit = {
 class Controller:
     def __init__(self, dt):
         self.dt = dt
-        self.pid = PID(KP, KI, KD, current_time=-dt)
+        self.pid = PID(u_0, KP, KI, KD, current_time=-dt)
         self.pid.setWindup(100)
         self.pid.setSampleTime(dt)
         self.set_control_limit(control_limit['lo'], control_limit['up'])
 
     def update(self, ref: np.ndarray, feedback_value: np.ndarray, current_time) -> np.ndarray:
-        self.pid.set_reference(ref[0])
-        cin = self.pid.update(feedback_value[1], current_time)      # only use the 2nd state here
+        self.pid.set_reference(ref[1])             # only care about the 2nd state here
+        cin = self.pid.update(feedback_value[1], current_time)  # only use the 2nd state here
         return np.array([cin])
 
     def set_control_limit(self, control_lo, control_up):
@@ -99,13 +100,14 @@ class CSTR(Simulator):
             State Feedback
         Controller: PID
     """
+
     def __init__(self, name, dt, max_index, noise=None):
         super().__init__('CSTR ' + name, dt, max_index)
-        self.nonlinear(ode=cstr, n=2, m=1, p=2)    # number of states, control inputs, outputs
+        self.nonlinear(ode=cstr, n=2, m=1, p=2)  # number of states, control inputs, outputs
         controller = Controller(dt)
         settings = {
             'init_state': x_0,
-            'feedback_type': 'state',     # 'state' or 'output',  you must define C if 'output'
+            'feedback_type': 'state',  # 'state' or 'output',  you must define C if 'output'
             'controller': controller
         }
         if noise:
@@ -113,4 +115,34 @@ class CSTR(Simulator):
         self.sim_init(settings)
 
 
+if __name__ == "__main__":
+    max_index = 1000
+    dt = 0.02
+    ref = [np.array([0, 300])] * (max_index+1)
+    # noise = {
+    #     'process': {
+    #         'type': 'box_uniform',
+    #         'param': {'lo': np.array([-0.000001, -0.001]), 'up': np.array([0.001, 0.001])}
+    #     }
+    # }
+    noise = None
+    cstr_model = CSTR('test', dt, max_index, noise)
+    for i in range(0, max_index + 1):
+        assert cstr_model.cur_index == i
+        cstr_model.update_current_ref(ref[i])
+        # attack here
+        cstr_model.evolve()
 
+    # print results
+    import matplotlib.pyplot as plt
+
+    t_arr = np.linspace(0, 10, max_index + 1)
+    ref = [x[1] for x in cstr_model.refs[:max_index + 1]]
+    y_arr = [x[1] for x in cstr_model.outputs[:max_index + 1]]
+
+    plt.plot(t_arr, y_arr, t_arr, ref)
+    plt.show()
+
+    u_arr = [x[0] for x in cstr_model.inputs[:max_index + 1]]
+    plt.plot(t_arr, u_arr)
+    plt.show()
