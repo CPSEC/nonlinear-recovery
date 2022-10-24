@@ -4,6 +4,7 @@ from copy import deepcopy
 from scipy.signal import StateSpace
 from scipy.integrate import solve_ivp
 from utils.formal.gaussian_distribution import GaussianDistribution
+from utils.control.linearizer import Linearizer
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -104,6 +105,15 @@ class Simulator:
         self.m = m
         self.p = p
         self.ode = ode
+
+    def linearize_at(self, x_0: np.ndarray, u_0: np.ndarray):
+        assert self.model_type == 'nonlinear'
+        linearize = Linearizer(self.ode, self.n, self.m)
+        Ac, Bc, Cc = linearize.at(x_0, u_0)
+        self.sysc = StateSpace(Ac, Bc, self.C, self.D)
+        self.sysc.c = Cc
+        self.sysd = self.sysc.to_discrete(self.dt)
+        self.sysd.c = self.dt * Cc
 
     def sim_init(self, settings: dict):
         """

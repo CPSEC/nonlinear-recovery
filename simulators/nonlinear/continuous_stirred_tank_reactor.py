@@ -26,7 +26,7 @@ UA = 5e4
 def cstr(t, x, u, Tf=350, Caf=1):
     # Inputs (3):
     # Temperature of cooling jacket (K)
-    Tc = u
+    Tc = u[0]
     # Tf = Feed Temperature (K)
     # Caf = Feed Concentration (mol/m^3)
 
