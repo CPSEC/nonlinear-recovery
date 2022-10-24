@@ -107,6 +107,9 @@ class Simulator:
         self.ode = ode
 
     def linearize_at(self, x_0: np.ndarray, u_0: np.ndarray):
+        """
+        self.sysc = Ax + Bu + c
+        """
         assert self.model_type == 'nonlinear'
         linearize = Linearizer(self.ode, self.n, self.m)
         Ac, Bc, Cc = linearize.at(x_0, u_0)
