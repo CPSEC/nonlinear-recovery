@@ -127,11 +127,22 @@ if __name__ == "__main__":
     # }
     noise = None
     cstr_model = CSTR('test', dt, max_index, noise)
+
+
     for i in range(0, max_index + 1):
         assert cstr_model.cur_index == i
         cstr_model.update_current_ref(ref[i])
         # attack here
+
+        # x = A x + B u
+        # x, u - 1-D array
+        # cstr_model.cur_x   #  ground truth
+        # cstr_model.cur_u   #  control input of last step
+        # cstr_model.cur_y   #
+        # cstr_model.cur_feedback   # attack on this
+
         cstr_model.evolve()
+
 
     # print results
     import matplotlib.pyplot as plt
