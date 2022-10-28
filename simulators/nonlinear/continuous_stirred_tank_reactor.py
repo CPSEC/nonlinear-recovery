@@ -1,6 +1,7 @@
 import numpy as np
 from utils import Simulator
 from utils.controllers.PID_incremental import PID
+from interval import imath
 
 # Parameters:
 # Volumetric Flowrate (m^3/sec)
@@ -23,7 +24,7 @@ k0 = 7.2e10
 UA = 5e4
 
 
-def cstr(t, x, u, Tf=350, Caf=1):
+def cstr(t, x, u, Tf=350, Caf=1, use_imath=False):
     # Inputs (3):
     # Temperature of cooling jacket (K)
     Tc = u[0]
@@ -37,7 +38,10 @@ def cstr(t, x, u, Tf=350, Caf=1):
     T = x[1]
 
     # reaction rate
-    rA = k0 * np.exp(-EoverR / T) * Ca
+    if use_imath:
+        rA = k0 * imath.exp(-EoverR / T) * Ca
+    else:
+        rA = k0 * np.exp(-EoverR / T) * Ca
 
     # Calculate concentration derivative
     dCadt = q / V * (Caf - Ca) - rA
@@ -47,11 +51,16 @@ def cstr(t, x, u, Tf=350, Caf=1):
            + UA / V / rho / Cp * (Tc - T)
 
     # Return xdot:
-    xdot = np.zeros(2)
-    xdot[0] = dCadt
-    xdot[1] = dTdt
-    return xdot
+    if use_imath:
+        return [dCadt, dTdt]
+    else:
+        xdot = np.zeros(2)
+        xdot[0] = dCadt
+        xdot[1] = dTdt
+        return xdot
 
+def cstr_imath(t, x, u, Tf=350, Caf=1):
+    return cstr(t=t, x=x, u=u, Tf=Tf, Caf=Caf, use_imath=True)
 
 # initial states
 x_0 = np.array([0.98, 280])
