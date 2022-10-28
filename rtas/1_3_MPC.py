@@ -3,6 +3,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from scipy.signal import StateSpace
 
 import sys
 sys.path.append('../')
@@ -57,15 +58,23 @@ for exp in exps:
                 safe_set_up = exp.safe_set_up
                 control = exp.model.inputs[i-1]
                 print(f'estimating deadline now...')
-                k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100 )
+                # k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100 )
+                k = 100
                 print(f'deadline {k=}')
                 recovery_complete_index = exp.attack_start_index + k
 
-            # Linearize 
+            # Linearize and Discretize
             A, B, c = linearize.at(x_cur, exp.model.inputs[i-1])
+            C = np.diag([1]*len(A)); D = np.zeros(B.shape) # not important or useful!
+            sysc = StateSpace(A, B, C, D)
+            sysd = sysc.to_discrete(exp.dt)
+            Ad = sysd.A
+            Bd = sysd.B
+            cd = c*exp.dt
+
             # get recovery control sequence
             mpc_settings = {
-                'Ad': A, 'Bd': B,
+                'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
                 'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
                 'N': k+3-(i-exp.recovery_index), # maintainable time=3! # receding horizon MPC!
                 'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,

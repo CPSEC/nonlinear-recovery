@@ -124,20 +124,20 @@ class cstr_bias:
     ode_imath = cstr_imath
     
     attack_start_index = 101 # index in time
-    recovery_index = 123 # index in time
-    bias = np.array([0, 0.05])
+    recovery_index = 110 # index in time
+    bias = np.array([0, 0.5])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
     
     output_index = 1 # index in state
     ref_index = 1 # index in state
 
-    safe_set_lo = np.array([0.7, 280])
-    safe_set_up = np.array([1.3, 330])
-    target_set_lo = np.array([0.97189, 299])
-    target_set_up = np.array([0.99189, 301])
-    control_lo = np.array([250])
-    control_up = np.array([350])
+    safe_set_lo = np.array([-1000, -1000])
+    safe_set_up = np.array([1000, 1000])
+    target_set_lo = np.array([-1000, -1000])
+    target_set_up = np.array([1000, 1000])
+    control_lo = np.array([0])
+    control_up = np.array([1000])
     recovery_ref = np.array([0, 300])
 
     Q = np.diag([1, 2.2])
