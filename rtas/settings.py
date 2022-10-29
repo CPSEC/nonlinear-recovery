@@ -151,7 +151,7 @@ class cstr_bias:
 
     # plot
     y_lim = (250, 370)
-    x_lim = (0, dt * max_index)
+    x_lim = (8, dt * 126)
     strip = (target_set_lo[output_index], target_set_up[output_index])
 
     # for linearizations for baselines, use steady state (ss) value below
