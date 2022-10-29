@@ -15,7 +15,8 @@ from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
 exps = [cstr_bias]
 
-baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc']
+# baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc']
+baselines = ['none', 'mpc']
 colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
 result = {}  
 
@@ -88,7 +89,7 @@ for exp in exps:
                 us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index]
                 x_0 = exp.model.states[exp.attack_start_index - 1]
                 x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us)
-                logger.debug(f'reconstructed state={x_cur}')
+                logger.debug(f'reconstructed state={x_cur}, x_gt={exp.model.cur_x}')
 
                 # deadline estimate
                 safe_set_lo = exp.safe_set_lo
