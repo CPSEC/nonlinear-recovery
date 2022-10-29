@@ -114,13 +114,13 @@ class cstr_bias:
     max_index = 300
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
-    # noise = {
-    #     'process': {
-    #         'type': 'box_uniform',
-    #         'param': {'lo': np.array([-0.000001, -0.001]), 'up': np.array([0.001, 0.001])}
-    #     }
-    # }
-    noise = None
+    noise = {
+        'process': {
+            'type': 'box_uniform',
+            'param': {'lo': np.array([-0.000001, -0.001]), 'up': np.array([0.001, 0.001])}
+        }
+    }
+    # noise = None
     model = CSTR(name, dt, max_index, noise=noise)
     ode_imath = cstr_imath
     
