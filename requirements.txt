@@ -1,3 +1,5 @@
 scipy>=1.9
 numpy
 cvxpy
+matplotlib
+pyinterval
