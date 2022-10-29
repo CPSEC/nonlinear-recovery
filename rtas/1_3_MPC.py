@@ -3,7 +3,7 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-from scipy.signal import StateSpace
+import pickle 
 
 import sys
 sys.path.append('../')
@@ -12,7 +12,7 @@ from settings import cstr_bias
 from simulators.nonlinear.continuous_stirred_tank_reactor import cstr
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
-from utils.control.linearizer import Linearizer
+from utils.control.linearizer import Linearizer, analytical_linearize
 
 # ready exp: lane_keeping,
 exps = [cstr_bias]
@@ -31,7 +31,7 @@ for exp in exps:
 
     u_lo = exp.model.controller.control_lo
     u_up = exp.model.controller.control_up
-    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1)
+    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
     est = NonlinearEstimator(exp.ode_imath, exp.dt)
 
     recovery_complete_index = np.inf # init to big value
@@ -40,9 +40,11 @@ for exp in exps:
         exp.model.update_current_ref(exp.ref[i])
         # attack here
         exp.model.cur_feedback = exp.attack.launch(exp.model.cur_feedback, i, exp.model.states)
+
         if i == exp.attack_start_index - 1:
             print('normal_state=', exp.model.cur_x)
         if exp.recovery_index <= i < recovery_complete_index:
+
             # x_0 estimation
             us = exp.model.inputs[exp.attack_start_index:i]
             xs = exp.model.states[exp.attack_start_index:i+1]
@@ -58,19 +60,13 @@ for exp in exps:
                 safe_set_up = exp.safe_set_up
                 control = exp.model.inputs[i-1]
                 print(f'estimating deadline now...')
-                # k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100 )
-                k = 100
+                # k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
+                k=20
                 print(f'deadline {k=}')
                 recovery_complete_index = exp.attack_start_index + k
 
             # Linearize and Discretize
-            A, B, c = linearize.at(x_cur, exp.model.inputs[i-1])
-            C = np.diag([1]*len(A)); D = np.zeros(B.shape) # not important or useful!
-            sysc = StateSpace(A, B, C, D)
-            sysd = sysc.to_discrete(exp.dt)
-            Ad = sysd.A
-            Bd = sysd.B
-            cd = c*exp.dt
+            Ad, Bd, cd = analytical_linearize(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
 
             # get recovery control sequence
             mpc_settings = {
@@ -105,14 +101,10 @@ for exp in exps:
     plt.rcParams.update({'font.size': 18})  # front size
     fig = plt.figure(figsize=(8, 4))
     plt.title(exp.name+' y_'+str(exp.output_index))
-    # recovery_complete_index = result['w/o']['recovery_complete_index']
     t_arr = np.linspace(0, exp.dt * recovery_complete_index, recovery_complete_index + 1)
-    # y_arr = [x[exp.output_index] for x in result['w/o']['outputs'][:recovery_complete_index + 1]]
     ref = [x[exp.ref_index] for x in exp.model.refs[:recovery_complete_index + 1]]
     plt.plot(t_arr, ref, color='black', linestyle='dashed')
-    # plt.plot(t_arr, y_arr, label='w/o')
 
-    recovery_complete_index = result['w/']['recovery_complete_index']
     t_arr = np.linspace(0, exp.dt * recovery_complete_index, recovery_complete_index + 1)
     y_arr = [x[exp.output_index] for x in result['w/']['outputs'][:recovery_complete_index + 1]]
     plt.plot(t_arr, y_arr, label='w/')

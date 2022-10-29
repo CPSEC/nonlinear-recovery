@@ -111,9 +111,9 @@ class quadruple_tank_bias:
 # -------------------- cstr ----------------------------
 class cstr_bias:
     name = 'cstr_bias'
-    max_index = 500
-    ref = [np.array([0, 300])] * (max_index+1)
-    dt = 0.02
+    max_index = 300
+    ref = [np.array([0.98189, 300.00013])] * (max_index+1)
+    dt = 0.1
     noise = {
         'process': {
             'type': 'box_uniform',
@@ -125,28 +125,34 @@ class cstr_bias:
     
     attack_start_index = 101 # index in time
     recovery_index = 110 # index in time
-    bias = np.array([0, 0.5])
+    bias = np.array([0, 5])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
     
     output_index = 1 # index in state
     ref_index = 1 # index in state
 
-    safe_set_lo = np.array([-1000, -1000])
-    safe_set_up = np.array([1000, 1000])
-    target_set_lo = np.array([-1000, -1000])
-    target_set_up = np.array([1000, 1000])
-    control_lo = np.array([0])
-    control_up = np.array([1000])
-    recovery_ref = np.array([0, 300])
+    safe_set_lo = np.array([-5, 280])
+    safe_set_up = np.array([5, 320])
+    target_set_lo = np.array([-2, 299])
+    target_set_up = np.array([2, 301])
+    control_lo = np.array([200])
+    control_up = np.array([400])
+    recovery_ref = np.array([0.98189, 300.00013])
 
-    Q = np.diag([1, 2.2])
-    QN = np.diag([1, 1])
-    R = np.diag([1])
+    Q = np.diag([0.1, 0.22])
+    QN = np.diag([0.1, 0.22])
+    R = np.diag([0.1])
+
+    MPC_freq = 1
 
     # plot
-    y_lim = (0, 1000)
-    x_lim = (0, 1000)
-    strip = (299, 301)
+    y_lim = (250, 350)
+    x_lim = (0, dt * max_index)
+    strip = (target_set_lo[output_index], target_set_up[output_index])
+
+    # for linearizations for baselines, use steady state (ss) value below
+    x_ss = np.array([0.98189, 300.00013])
+    u_ss = np.array([274.57786])
 
 

@@ -124,7 +124,7 @@ class MPC(Controller):
         self.Aineq = np.eye((self.N + 1) * self.nx + self.N * self.nu)
 
         repeated_cd = np.array(self.cd.tolist() * self.N)
-        self.leq = np.hstack([-self.x0, repeated_cd]) # np.hstack([-self.x0, np.zeros(self.N * self.nx)])
+        self.leq = np.hstack([-self.x0, -1*repeated_cd]) # np.hstack([-self.x0, np.zeros(self.N * self.nx)])
         if hasattr(self, 'ddl') and self.ddl <= self.N:
             self.lineq = np.hstack(
                 [np.kron(np.ones(self.ddl), self.xmin), np.kron(np.ones(self.N - self.ddl + 1), self.xtmin),

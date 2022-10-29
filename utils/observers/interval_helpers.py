@@ -65,7 +65,8 @@ def RungeKutta_Integration(dynamics, x_interval, u_interval, step_size):
 def Newton_Integration(dynamics, x_interval, u_interval, step_size):
     x = x_interval
     u = u_interval
-    x_dot = dynamics(x, u)
+    t = None
+    x_dot = dynamics(t, x, u)
     x_next = __add__(x, __mul__(x_dot, step_size))
     
     return __add_to_every_element__(x_next, DISTURBANCE_INTERVAL)
@@ -97,7 +98,7 @@ def reach(dynamics, x0_interval, Us_saved, Xs_saved, unsafeSensors_oneHot, step_
             x_interval = replace_safe_state_intervals_with_saved_value_intervals(x_interval, Xs_saved_interval[i], unsafeSensors_oneHot)
         u_interval = Us_saved_interval[i]
         
-        #x_interval = Newton_Integration(dynamics, x_interval, u_interval, step_size)
+        # x_interval = Newton_Integration(dynamics, x_interval, u_interval, step_size)
         x_interval = RungeKutta_Integration(dynamics, x_interval, u_interval, step_size)
         #print(x_interval)
     return x_interval
