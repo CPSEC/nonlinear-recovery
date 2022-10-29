@@ -114,40 +114,43 @@ class cstr_bias:
     max_index = 300
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
-    noise = {
-        'process': {
-            'type': 'box_uniform',
-            'param': {'lo': np.array([-0.000001, -0.001]), 'up': np.array([0.001, 0.001])}
-        }
-    }
+    # noise = {
+    #     'process': {
+    #         'type': 'box_uniform',
+    #         'param': {'lo': np.array([-0.000001, -0.001]), 'up': np.array([0.001, 0.001])}
+    #     }
+    # }
+    noise = None
     model = CSTR(name, dt, max_index, noise=noise)
     ode_imath = cstr_imath
     
-    attack_start_index = 101 # index in time
+    attack_start_index = 100 # index in time
     recovery_index = 110 # index in time
-    bias = np.array([0, 5])
+    bias = np.array([0, -30])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
     
     output_index = 1 # index in state
     ref_index = 1 # index in state
 
-    safe_set_lo = np.array([-5, 280])
-    safe_set_up = np.array([5, 320])
-    target_set_lo = np.array([-2, 299])
-    target_set_up = np.array([2, 301])
-    control_lo = np.array([200])
-    control_up = np.array([400])
+    safe_set_lo = np.array([0, 250])
+    safe_set_up = np.array([5, 350])
+    target_set_lo = np.array([0, 299])
+    target_set_up = np.array([5, 301])
+    control_lo = np.array([250])
+    control_up = np.array([350])
     recovery_ref = np.array([0.98189, 300.00013])
 
-    Q = np.diag([0.1, 0.22])
-    QN = np.diag([0.1, 0.22])
-    R = np.diag([0.1])
+    # Q = np.diag([1, 1])
+    # QN = np.diag([1, 1])
+    Q = np.diag([1, 1000])
+    QN = np.diag([1, 1000])
+    R = np.diag([1])
 
     MPC_freq = 1
 
     # plot
-    y_lim = (250, 350)
+    y_lim = (250, 370)
     x_lim = (0, dt * max_index)
     strip = (target_set_lo[output_index], target_set_up[output_index])
 
