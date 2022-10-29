@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 os.environ["RANDOM_SEED"] = '0'   # for reproducibility
-from settings import motor_speed_bias, quadruple_tank_bias
+from settings_baseline import motor_speed_bias, quadruple_tank_bias
 from utils.observers.full_state_bound import Estimator
 from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
@@ -23,7 +23,7 @@ result = {}  # for print or plot
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("debug.log"),
+        logging.FileHandler("../rtas/debug.log"),
         logging.StreamHandler(sys.stdout)
     ]
 )
