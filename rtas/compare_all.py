@@ -95,7 +95,6 @@ for exp in exps:
                 safe_set_up = exp.safe_set_up
                 control = exp.model.inputs[i - 1]
                 k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100)
-                k = max(1, k)
                 recovery_complete_index = exp.recovery_index + k
                 logger.debug(f'deadline={k}')
 
