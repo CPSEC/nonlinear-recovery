@@ -117,7 +117,7 @@ class cstr_bias:
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([-0.000001, -0.1]), 'up': np.array([0.0001, 0.1])}
+            'param': {'lo': np.array([0, 0]), 'up': np.array([0.0001, 0.01])} # change 0.01 to 1 or 5 or something
         }
     }
     # noise = None
@@ -151,7 +151,7 @@ class cstr_bias:
 
     # plot
     y_lim = (280, 360)
-    x_lim = (8, dt * 131)
+    x_lim = (8, dt * 141)
     y_label = 'Temperature'
     strip = (target_set_lo[output_index], target_set_up[output_index])
     y_label = 'Temperature (K)'

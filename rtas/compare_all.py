@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
+from black import main
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -80,7 +81,7 @@ for exp in exps:
             exp.model.cur_feedback = exp.attack.launch(exp.model.cur_feedback, i, exp.model.states)
             if i == exp.attack_start_index - 1:
                 logger.debug(f'trustworthy_index={i}, trustworthy_state={exp.model.cur_x}')
-            if exp.recovery_index <= i < recovery_complete_index + maintain_time:
+            if exp.recovery_index <= i < recovery_complete_index:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
                 
                 # State reconstruction
@@ -97,7 +98,7 @@ for exp in exps:
                     control = exp.model.inputs[i-1]
                     k = non_est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
                     deadline_for_all_methods = k
-                    recovery_complete_index = exp.attack_start_index + k
+                    recovery_complete_index = exp.recovery_index + k
                     logger.debug(f'deadline={k}')
                 # maintainable time compute
 
@@ -110,7 +111,7 @@ for exp in exps:
                 mpc_settings = {
                     'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
                     'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
-                    'N': k+maintain_time-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
+                    'N': k+maintain_time+1-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
                     'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
                     'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
                     'control_lo': exp.control_lo, 'control_up': exp.control_up,
@@ -125,11 +126,15 @@ for exp in exps:
                 u = rec_u[0]
                 exp.model.evolve(u)
                 print(f'after evolve - {exp.model.cur_x=}')
-
+            elif recovery_complete_index <= i < recovery_complete_index + maintain_time + 1:
                 if i == recovery_complete_index:
                     logger.debug(f'state after recovery={exp.model.cur_x}')
                     step = recovery_complete_index - exp.recovery_index
                     logger.debug(f'use {step} steps to recover.')
+
+                u = rec_u[i-recovery_complete_index+1]
+                exp.model.evolve(u)
+                print(f'after evolve - {exp.model.cur_x=}')
             else:
                 exp.model.evolve()
 
@@ -189,7 +194,7 @@ for exp in exps:
                 # get recovery control sequence
                 lp_settings = {
                     'Ad': A, 'Bd': B, 'c_nonlinear': c,
-                    'N': k,
+                    'N': k+maintain_time,
                     'ddl': k, 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
                     'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
                     'control_lo': exp.control_lo, 'control_up': exp.control_up,
@@ -201,15 +206,16 @@ for exp in exps:
                 rec_x = lp.get_last_x()
                 logger.debug(f'expected recovery state={rec_x}')
 
-            if exp.recovery_index <= i < recovery_complete_index:
+            if i == recovery_complete_index:
+                logger.debug(f'state after recovery={exp.model.cur_x}')
+                step = recovery_complete_index - exp.recovery_index
+                logger.debug(f'use {step} steps to recover.')
+
+            if exp.recovery_index <= i < recovery_complete_index + maintain_time:
                 rec_u_index = i - exp.recovery_index
                 u = rec_u[rec_u_index]
                 exp.model.evolve(u)
             else:
-                if i == recovery_complete_index:
-                    logger.debug(f'state after recovery={exp.model.cur_x}')
-                    step = recovery_complete_index - exp.recovery_index
-                    logger.debug(f'use {step} steps to recover.')
                 exp.model.evolve()
 
         exp_rst[bl] = {}
@@ -271,7 +277,7 @@ for exp in exps:
                     'Ad': A, 'Bd': B, 'c_nonlinear': c,
                     'Q': Q_lqr, 'QN': QN_lqr, 'R': R_lqr,
                     # 'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
-                    'N': k + 3,
+                    'N': k + maintain_time,
                     'ddl': k, 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
                     'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
                     'control_lo': exp.control_lo, 'control_up': exp.control_up,
@@ -390,7 +396,7 @@ for exp in exps:
         plt.vlines(exp.attack_start_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='red', linestyle='dashed', linewidth=2)
         plt.vlines(exp.recovery_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='green', linestyle='dotted', linewidth=2)
         
-        recovery_complete_index = exp.attack_start_index + deadline_for_all_methods
+        recovery_complete_index = exp.recovery_index + deadline_for_all_methods
         # print(recovery_complete_index)
         plt.vlines((recovery_complete_index)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='blue', linestyle='dotted', linewidth=2)
         plt.vlines((recovery_complete_index + maintain_time)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='black', linestyle='dotted', linewidth=2)
@@ -416,5 +422,7 @@ for exp in exps:
     plt.ylabel(exp.y_label)
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
-    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
+    import time
+    thistime = time.time()
+    plt.savefig(f'fig/{exp.name}_all_{thistime}.png', format='png', bbox_inches='tight')
     # plt.show()
