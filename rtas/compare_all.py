@@ -223,7 +223,7 @@ for exp in exps:
         exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
         exp_rst[bl]['inputs'] = deepcopy(exp.model.inputs)
         exp_rst[bl]['time'] = {}
-        exp_rst[bl]['time']['recovery_complete'] = recovery_complete_index
+        exp_rst[bl]['time']['recovery_complete'] = recovery_complete_index + maintain_time
 
     #  =================  LQR_recovery  ===================
     # did not add maintainable time estimation, let it to be 3
@@ -417,7 +417,8 @@ for exp in exps:
     if exp.y_lim:
         plt.ylim(exp.y_lim)
     if exp.x_lim:
-        plt.xlim(exp.x_lim)
+        updated_x_lim = (exp.x_lim[0], exp.dt * (recovery_complete_index + maintain_time))
+        plt.xlim(updated_x_lim)
 
     # plt.legend()
     plt.ylabel(exp.y_label)
@@ -425,5 +426,5 @@ for exp in exps:
     plt.legend()
     import time
     thistime = time.time()
-    plt.savefig(f'fig/{exp.name}_all_{thistime}.png', format='png', bbox_inches='tight')
+    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
     # plt.show()

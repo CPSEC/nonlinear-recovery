@@ -111,7 +111,7 @@ class quadruple_tank_bias:
 # -------------------- cstr ----------------------------
 class cstr_bias:
     name = 'cstr_bias'
-    max_index = 300
+    max_index = 160
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
     noise = {
@@ -152,9 +152,8 @@ class cstr_bias:
     # plot
     y_lim = (280, 360)
     x_lim = (8, dt * 200)
-    y_label = 'Temperature'
     strip = (target_set_lo[output_index], target_set_up[output_index])
-    y_label = 'Temperature (K)'
+    y_label = 'Temperature [K]'
 
     # for linearizations for baselines, find equilibrium point and use below
     u_ss = np.array([274.57786])
