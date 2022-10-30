@@ -388,6 +388,9 @@ for exp in exps:
     if exp.y_lim:
         plt.vlines(exp.attack_start_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='red', linestyle='dashed', linewidth=2)
         plt.vlines(exp.recovery_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='green', linestyle='dotted', linewidth=2)
+        # print(exp.attack_start_index + deadline_for_all_methods)
+        plt.vlines((exp.attack_start_index + deadline_for_all_methods - maintain_time)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='blue', linestyle='dotted', linewidth=2)
+        plt.vlines((exp.attack_start_index + deadline_for_all_methods)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='black', linestyle='dotted', linewidth=2)
     # strip
     cnt = len(t_arr)
     y1 = [exp.strip[0]]*cnt
