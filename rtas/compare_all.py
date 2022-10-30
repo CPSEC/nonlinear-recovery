@@ -398,6 +398,7 @@ for exp in exps:
         end_time = exp_rst[bl]['time']['recovery_complete']
         t_arr_tmp = t_arr[exp.recovery_index:end_time+1]
         output = [x[exp.output_index] for x in exp_rst[bl]['outputs'][exp.recovery_index:end_time+1]]
+        # output = [x[exp.output_index] for x in exp_rst[bl]['states'][exp.recovery_index:end_time + 1]]
         plt.plot(t_arr_tmp, output, color=colors[bl], label=bl)
 
     if exp.y_lim:
@@ -410,8 +411,4 @@ for exp in exps:
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
     plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
-    plt.show()
-
-    # output1 = [x[exp.output_index] for x in exp_rst['lqr']['outputs'][exp.recovery_index:end_time+1]]
-    # output2 = [x[exp.output_index] for x in exp_rst['mpc']['outputs'][exp.recovery_index:end_time+1]]
-    # print([o1-o2 for o1, o2 in zip(output1, output2)])
+    # plt.show()
