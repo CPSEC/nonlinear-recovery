@@ -150,9 +150,10 @@ class cstr_bias:
     MPC_freq = 1
 
     # plot
-    y_lim = (250, 370)
+    y_lim = (295, 360)
     x_lim = (8, dt * 126)
     strip = (target_set_lo[output_index], target_set_up[output_index])
+    y_label = 'Temperature (K)'
 
     # for linearizations for baselines, use steady state (ss) value below
     x_ss = np.array([0.98189, 300.00013])

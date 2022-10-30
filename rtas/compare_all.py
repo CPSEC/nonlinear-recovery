@@ -58,13 +58,95 @@ for exp in exps:
         exp_rst[bl]['time'] = {}
         exp_rst[bl]['time']['recovery_complete'] = exp.max_index-1
 
+    #  =================  MPC_recovery  ===================
+    # did not add maintainable time estimation, let it to be 3
+    maintain_time = 3
+    exp.model.reset()
+
+    # init variables
+    recovery_complete_index = np.inf
+    rec_u = None
+    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
+    non_est = NonlinearEstimator(exp.ode_imath, exp.dt)
+
+    if 'mpc' in baselines:
+        bl = 'mpc'
+        exp_name = f" {bl} {exp.name} "
+        logger.info(f"{exp_name:=^40}")
+        for i in range(0, exp.max_index + 1):
+            assert exp.model.cur_index == i
+            exp.model.update_current_ref(exp.ref[i])
+            # attack here
+            exp.model.cur_feedback = exp.attack.launch(exp.model.cur_feedback, i, exp.model.states)
+            if i == exp.attack_start_index - 1:
+                logger.debug(f'trustworthy_index={i}, trustworthy_state={exp.model.cur_x}')
+            if exp.recovery_index <= i < recovery_complete_index:
+                logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
+                
+                # State reconstruction
+                us = exp.model.inputs[exp.attack_start_index - 1:i]
+                xs = exp.model.states[exp.attack_start_index - 1:i+1]
+                x_0 = exp.model.states[exp.attack_start_index - 1]
+                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                logger.debug(f'reconstructed state={x_cur}')
+
+                # deadline estimate only once
+                if i == exp.recovery_index:
+                    safe_set_lo = exp.safe_set_lo
+                    safe_set_up = exp.safe_set_up
+                    control = exp.model.inputs[i-1]
+                    k = non_est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
+                    deadline_for_all_methods = k
+                    recovery_complete_index = exp.attack_start_index + k
+                    logger.debug(f'deadline={k}')
+                # maintainable time compute
+
+
+                # Linearize and Discretize
+                # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
+                Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
+
+                # get recovery control sequence
+                mpc_settings = {
+                    'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
+                    'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
+                    'N': k+maintain_time-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
+                    'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
+                    'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
+                    'control_lo': exp.control_lo, 'control_up': exp.control_up,
+                    'ref': exp.recovery_ref
+                }
+                mpc = MPC(mpc_settings)
+                _ = mpc.update(feedback_value=x_cur)
+                rec_u = mpc.get_full_ctrl()
+                rec_x = mpc.get_last_x()
+                logger.debug(f'expected recovery state={rec_x}')
+
+                u = rec_u[0]
+                exp.model.evolve(u)
+                print(f'after evolve - {exp.model.cur_x=}')
+            else:
+                if i == recovery_complete_index:
+                    logger.debug(f'state after recovery={exp.model.cur_x}')
+                    step = recovery_complete_index - exp.recovery_index
+                    logger.debug(f'use {step} steps to recover.')
+                exp.model.evolve()
+
+        exp_rst[bl] = {}
+        exp_rst[bl]['states'] = deepcopy(exp.model.states)
+        exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
+        exp_rst[bl]['inputs'] = deepcopy(exp.model.inputs)
+        exp_rst[bl]['time'] = {}
+        exp_rst[bl]['time']['recovery_complete'] = recovery_complete_index + maintain_time
+    
     #  =================  LP_recovery  ===================
     exp.model.reset()
 
     # required objects
+    ## Linearize about steady state and Linear estimator (may be required for staqte reconstruction comparison)
     linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
     A, B, c = linearize.at(exp.x_ss, exp.u_ss)  
-    est = Estimator(A, B, max_k=150, epsilon=1e-7)
+    # est = Estimator(A, B, max_k=100, epsilon=1e-7)
 
     # init variables
     recovery_complete_index = np.inf
@@ -85,16 +167,21 @@ for exp in exps:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
 
                 # State reconstruction
-                us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index]
+                # us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index]
+                # x_0 = exp.model.states[exp.attack_start_index - 1]
+                # x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us)
+                us = exp.model.inputs[exp.attack_start_index - 1:i]
+                xs = exp.model.states[exp.attack_start_index - 1:i+1]
                 x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us)
+                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
                 logger.debug(f'reconstructed state={x_cur}')
 
-                # deadline estimate
-                safe_set_lo = exp.safe_set_lo
-                safe_set_up = exp.safe_set_up
-                control = exp.model.inputs[i - 1]
-                k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100)
+                # # deadline estimate
+                # safe_set_lo = exp.safe_set_lo
+                # safe_set_up = exp.safe_set_up
+                # control = exp.model.inputs[i - 1]
+                # k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100)
+                k = deadline_for_all_methods
                 recovery_complete_index = exp.recovery_index + k
                 logger.debug(f'deadline={k}')
 
@@ -155,16 +242,21 @@ for exp in exps:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
 
                 # State reconstruction
-                us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index]
+                # us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index]
+                # x_0 = exp.model.states[exp.attack_start_index - 1]
+                # x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us)
+                us = exp.model.inputs[exp.attack_start_index - 1:i]
+                xs = exp.model.states[exp.attack_start_index - 1:i+1]
                 x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us)
+                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
                 logger.debug(f'reconstructed state={x_cur}')
 
                 # deadline estimate
-                safe_set_lo = exp.safe_set_lo
-                safe_set_up = exp.safe_set_up
-                control = exp.model.inputs[i - 1]
-                k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100)
+                # safe_set_lo = exp.safe_set_lo
+                # safe_set_up = exp.safe_set_up
+                # control = exp.model.inputs[i - 1]
+                # k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, 100)
+                k = deadline_for_all_methods
                 recovery_complete_index = exp.recovery_index + k
                 logger.debug(f'deadline={k}')
                 # maintainable time compute
@@ -172,7 +264,7 @@ for exp in exps:
 
                 # get recovery control sequence
                 lqr_settings = {
-                    'Ad': A, 'Bd': B, 
+                    'Ad': A, 'Bd': B, 'c_nonlinear': c,
                     'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
                     'N': k + 3,
                     'ddl': k, 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
@@ -216,6 +308,7 @@ for exp in exps:
                 res = False
                 break
         return res
+    est = Estimator(A, B, max_k=100, epsilon=1e-7)
 
     # init variables
     recovery_complete_index = np.inf
@@ -236,9 +329,13 @@ for exp in exps:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
 
                 # State reconstruction
-                us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index-1]
+                # us = exp.model.inputs[exp.attack_start_index - 1:exp.recovery_index-1]
+                # x_0 = exp.model.states[exp.attack_start_index - 1]
+                # x_cur = est.estimate_wo_bound(x_0, us)
+                us = exp.model.inputs[exp.attack_start_index - 1:i]
+                xs = exp.model.states[exp.attack_start_index - 1:i+1]
                 x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur = est.estimate_wo_bound(x_0, us)
+                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
                 logger.debug(f'one before reconstructed state={x_cur}')
                 last_predicted_state = deepcopy(x_cur)
 
@@ -249,10 +346,15 @@ for exp in exps:
                 #     logger.debug('state after recovery={exp.model.cur_x}')
                 #     step = recovery_complete_index - exp.recovery_index
                 #     logger.debug(f'use {step} steps to recover.')
+                
                 us = [exp.model.inputs[i - 1]]
                 x_0 = last_predicted_state
                 x_cur = est.estimate_wo_bound(x_0, us)
-                exp.model.cur_feedback = exp.model.sysd.C @ x_cur
+                # us = exp.model.inputs[exp.attack_start_index - 1:i]
+                # xs = exp.model.states[exp.attack_start_index - 1:i+1]
+                # x_0 = exp.model.states[exp.attack_start_index - 1]
+                # x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                exp.model.cur_feedback = x_cur # exp.model.sysd.C @ x_cur
                 last_predicted_state = deepcopy(x_cur)
                 # print(f'{exp.model.cur_u}')
             exp.model.evolve()
@@ -265,89 +367,9 @@ for exp in exps:
         exp_rst[bl]['time']['recovery_complete'] = exp.max_index-1
         # print(f'{recovery_complete_index}')
 
-    #  =================  MPC_recovery  ===================
-    # did not add maintainable time estimation, let it to be 3
-    maintain_time = 3
-    exp.model.reset()
-
-    # init variables
-    recovery_complete_index = np.inf
-    rec_u = None
-    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
-    est = NonlinearEstimator(exp.ode_imath, exp.dt)
-
-    if 'mpc' in baselines:
-        bl = 'mpc'
-        exp_name = f" {bl} {exp.name} "
-        logger.info(f"{exp_name:=^40}")
-        for i in range(0, exp.max_index + 1):
-            assert exp.model.cur_index == i
-            exp.model.update_current_ref(exp.ref[i])
-            # attack here
-            exp.model.cur_feedback = exp.attack.launch(exp.model.cur_feedback, i, exp.model.states)
-            if i == exp.attack_start_index - 1:
-                logger.debug(f'trustworthy_index={i}, trustworthy_state={exp.model.cur_x}')
-            if exp.recovery_index <= i < recovery_complete_index:
-                logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
-                
-                # State reconstruction
-                us = exp.model.inputs[exp.attack_start_index - 1:i]
-                xs = exp.model.states[exp.attack_start_index - 1:i+1]
-                x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
-                logger.debug(f'reconstructed state={x_cur}')
-
-                # deadline estimate only once
-                if i == exp.recovery_index:
-                    safe_set_lo = exp.safe_set_lo
-                    safe_set_up = exp.safe_set_up
-                    control = exp.model.inputs[i-1]
-                    k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
-                    recovery_complete_index = exp.attack_start_index + k
-                    logger.debug(f'deadline={k}')
-                # maintainable time compute
-
-
-                # Linearize and Discretize
-                # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
-                Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
-
-                # get recovery control sequence
-                mpc_settings = {
-                    'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
-                    'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
-                    'N': k+maintain_time-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
-                    'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
-                    'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
-                    'control_lo': exp.control_lo, 'control_up': exp.control_up,
-                    'ref': exp.recovery_ref
-                }
-                mpc = MPC(mpc_settings)
-                _ = mpc.update(feedback_value=x_cur)
-                rec_u = mpc.get_full_ctrl()
-                rec_x = mpc.get_last_x()
-                logger.debug(f'expected recovery state={rec_x}')
-
-                u = rec_u[0]
-                exp.model.evolve(u)
-                print(f'after evolve - {exp.model.cur_x=}')
-            else:
-                if i == recovery_complete_index:
-                    logger.debug(f'state after recovery={exp.model.cur_x}')
-                    step = recovery_complete_index - exp.recovery_index
-                    logger.debug(f'use {step} steps to recover.')
-                exp.model.evolve()
-
-        exp_rst[bl] = {}
-        exp_rst[bl]['states'] = deepcopy(exp.model.states)
-        exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
-        exp_rst[bl]['inputs'] = deepcopy(exp.model.inputs)
-        exp_rst[bl]['time'] = {}
-        exp_rst[bl]['time']['recovery_complete'] = recovery_complete_index + maintain_time
-
     # ==================== plot =============================
     plt.rcParams.update({'font.size': 24})  # front size
-    fig = plt.figure(figsize=(8, 4))
+    fig = plt.figure(figsize=(10, 5))
 
     # plot reference
     t_arr = np.linspace(0, exp.dt * exp.max_index, exp.max_index + 1)[:exp.max_index]
@@ -367,7 +389,7 @@ for exp in exps:
     y2 = [exp.strip[1]]*cnt
     plt.fill_between(t_arr, y1, y2, facecolor='green', alpha=0.1)
 
-    for bl in baselines:
+    for bl in ['none', 'lqr']:
         end_time = exp_rst[bl]['time']['recovery_complete']
         t_arr_tmp = t_arr[exp.recovery_index:end_time+1]
         output = [x[exp.output_index] for x in exp_rst[bl]['outputs'][exp.recovery_index:end_time+1]]
@@ -381,5 +403,6 @@ for exp in exps:
     # plt.legend()
     plt.ylabel(exp.y_label)
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
-    plt.savefig(f'fig/baselines/{exp.name}.svg', format='svg', bbox_inches='tight')
+    plt.legend()
+    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
     plt.show()
