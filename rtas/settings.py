@@ -134,7 +134,7 @@ class cstr_bias:
     ref_index = 1 # index in state
 
     safe_set_lo = np.array([0, 250])
-    safe_set_up = np.array([5, 350])
+    safe_set_up = np.array([5, 360])
     target_set_lo = np.array([0, 299])
     target_set_up = np.array([5, 301])
     control_lo = np.array([250])
@@ -152,6 +152,7 @@ class cstr_bias:
     # plot
     y_lim = (295, 360)
     x_lim = (8, dt * 126)
+    y_label = 'Temperature'
     strip = (target_set_lo[output_index], target_set_up[output_index])
     y_label = 'Temperature (K)'
 
