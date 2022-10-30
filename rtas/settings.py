@@ -1,3 +1,4 @@
+
 import numpy as np
 
 import sys
@@ -5,11 +6,12 @@ sys.path.append('../')
 
 from simulators.linear.motor_speed import MotorSpeed
 from simulators.linear.quadruple_tank import QuadrupleTank
-from simulators.nonlinear.continuous_stirred_tank_reactor import CSTR, cstr_imath
+from simulators.nonlinear.continuous_stirred_tank_reactor import CSTR
+from simulators.nonlinear.quad import quadrotor
 from utils.attack import Attack
 from utils.formal.strip import Strip
 
-
+cstr_imath = True
 # --------------------- motor speed -------------------
 class motor_speed_bias:
     # needed by 0_attack_no_recovery
@@ -111,13 +113,13 @@ class quadruple_tank_bias:
 # -------------------- cstr ----------------------------
 class cstr_bias:
     name = 'cstr_bias'
-    max_index = 160
+    max_index = 300
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0]), 'up': np.array([0.1, 0.1])} # change 0.01 to 1 or 5 or something
+            'param': {'lo': np.array([0, 0]), 'up': np.array([0.0001, 0.01])} # change 0.01 to 1 or 5 or something
         }
     }
     # noise = None
@@ -151,12 +153,65 @@ class cstr_bias:
 
     # plot
     y_lim = (280, 360)
-    x_lim = (8, dt * 200)
+    x_lim = (8, dt * 141)
+    y_label = 'Temperature'
     strip = (target_set_lo[output_index], target_set_up[output_index])
-    y_label = 'Temperature [K]'
+    y_label = 'Temperature (K)'
 
     # for linearizations for baselines, find equilibrium point and use below
     u_ss = np.array([274.57786])
     x_ss = np.array([0.98472896, 300.00335862])
 
 
+#---------------quadrotor----------------------------
+class quad_bias:
+    name = 'quad_bias'
+    max_index = 300
+    ref = [np.array([0,0,0,0,0,0,0,0,5,0,0,0])] * (max_index+1)
+    dt = 0.01
+    noise = {
+        'process': {
+            'type': 'box_uniform',
+            'param': {'lo': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'up': np.array([0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001])} # change 0.01 to 1 or 5 or something
+        }
+    }
+    # noise = None
+    model = quadrotor(name, dt, max_index, noise=noise)
+    ode_imath = cstr_imath
+    
+    attack_start_index = 100 # index in time
+    recovery_index = 110 # index in time
+    bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, 0.5, 0, 0, 0])
+    unsafe_states_onehot = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
+    attack = Attack('bias', bias, attack_start_index)
+    
+    output_index = 8 # index in state
+    ref_index = 8 # index in state
+
+    target_set_lo = np.array([-109, -109, -109, -109, -109, -109, -109, -109, 5-0.02, -109, -109, -109])
+    target_set_up = np.array([109, 109, 109, 109, 109, 109, 109, 109, 5+0.02, 109, 109, 109])
+    safe_set_lo = np.array([-109, -109, -109, -109, -109, -109, -109, -109, 4, -109, -109, -109])
+    safe_set_up = np.array([109, 109, 109, 109, 109, 109, 109, 109, 15, 109, 109, 109])
+
+
+    control_lo = np.array([-10])
+    control_up = np.array([100])
+    recovery_ref = np.array([0,0,0,0,0,0,0,0,5,0,0,0])
+
+    # Q = np.diag([1, 1])
+    # QN = np.diag([1, 1])
+    Q = np.eye(12)
+    QN = np.eye(12)
+    R = np.diag([10])
+
+    MPC_freq = 1
+
+    # plot
+    y_lim = (8, 12)
+    x_lim = (dt*95, dt * 141)
+    y_label = 'Altitude (M)'
+    strip = (target_set_lo[output_index], target_set_up[output_index])
+
+    # for linearizations for baselines, find equilibrium point and use below
+    u_ss = np.array([9.81])
+    x_ss = np.array([0,0,0,0,0,0,0,0,5,0,0,0])
