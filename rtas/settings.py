@@ -117,7 +117,7 @@ class cstr_bias:
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0]), 'up': np.array([0.0001, 0.01])} # change 0.01 to 1 or 5 or something
+            'param': {'lo': np.array([0, 0]), 'up': np.array([0.1, 0.1])} # change 0.01 to 1 or 5 or something
         }
     }
     # noise = None
