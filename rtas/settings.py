@@ -151,7 +151,7 @@ class cstr_bias:
 
     # plot
     y_lim = (280, 360)
-    x_lim = (8, dt * 128)
+    x_lim = (8, dt * 131)
     y_label = 'Temperature'
     strip = (target_set_lo[output_index], target_set_up[output_index])
     y_label = 'Temperature (K)'

@@ -80,7 +80,7 @@ for exp in exps:
             exp.model.cur_feedback = exp.attack.launch(exp.model.cur_feedback, i, exp.model.states)
             if i == exp.attack_start_index - 1:
                 logger.debug(f'trustworthy_index={i}, trustworthy_state={exp.model.cur_x}')
-            if exp.recovery_index <= i < recovery_complete_index:
+            if exp.recovery_index <= i < recovery_complete_index + maintain_time:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
                 
                 # State reconstruction
@@ -125,11 +125,12 @@ for exp in exps:
                 u = rec_u[0]
                 exp.model.evolve(u)
                 print(f'after evolve - {exp.model.cur_x=}')
-            else:
+
                 if i == recovery_complete_index:
                     logger.debug(f'state after recovery={exp.model.cur_x}')
                     step = recovery_complete_index - exp.recovery_index
                     logger.debug(f'use {step} steps to recover.')
+            else:
                 exp.model.evolve()
 
         exp_rst[bl] = {}
@@ -388,9 +389,11 @@ for exp in exps:
     if exp.y_lim:
         plt.vlines(exp.attack_start_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='red', linestyle='dashed', linewidth=2)
         plt.vlines(exp.recovery_index*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='green', linestyle='dotted', linewidth=2)
-        # print(exp.attack_start_index + deadline_for_all_methods)
-        plt.vlines((exp.attack_start_index + deadline_for_all_methods - maintain_time)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='blue', linestyle='dotted', linewidth=2)
-        plt.vlines((exp.attack_start_index + deadline_for_all_methods)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='black', linestyle='dotted', linewidth=2)
+        
+        recovery_complete_index = exp.attack_start_index + deadline_for_all_methods
+        # print(recovery_complete_index)
+        plt.vlines((recovery_complete_index)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='blue', linestyle='dotted', linewidth=2)
+        plt.vlines((recovery_complete_index + maintain_time)*exp.dt, exp.y_lim[0], exp.y_lim[1], colors='black', linestyle='dotted', linewidth=2)
     # strip
     cnt = len(t_arr)
     y1 = [exp.strip[0]]*cnt
