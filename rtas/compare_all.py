@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from copy import deepcopy
-from black import main
+# from black import main
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -319,7 +319,7 @@ for exp in exps:
                 res = False
                 break
         return res
-    est = Estimator(A, B, max_k=100, epsilon=1e-7)
+    est = Estimator(A, B, max_k=100, epsilon=1e-7, c=c)
 
     # init variables
     recovery_complete_index = np.inf
@@ -365,7 +365,8 @@ for exp in exps:
                 # us = exp.model.inputs[exp.attack_start_index - 1:i]
                 # xs = exp.model.states[exp.attack_start_index - 1:i+1]
                 # x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                # x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                x_cur = est.estimate_wo_bound(x_0, us)
                 exp.model.cur_feedback = x_cur # exp.model.sysd.C @ x_cur
                 last_predicted_state = deepcopy(x_cur)
                 # print(f'{exp.model.cur_u}')
