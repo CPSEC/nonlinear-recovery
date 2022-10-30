@@ -156,8 +156,8 @@ class cstr_bias:
     strip = (target_set_lo[output_index], target_set_up[output_index])
     y_label = 'Temperature (K)'
 
-    # for linearizations for baselines, use steady state (ss) value below
-    x_ss = np.array([0.98189, 300.00013])
+    # for linearizations for baselines, find equilibrium point and use below
     u_ss = np.array([274.57786])
+    x_ss = np.array([0.98472896, 300.00335862])
 
 
