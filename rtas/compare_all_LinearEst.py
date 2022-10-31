@@ -17,7 +17,7 @@ from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
-exps = [cstr_bias] # [quad_bias] # 
+exps = [quad_bias] # [quad_bias] # 
 
 baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
 if 'mpc' not in baselines:
