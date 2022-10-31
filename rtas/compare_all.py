@@ -15,9 +15,9 @@ from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
-exps = [quad_bias] # [quad_bias] # 
+exps = [cstr_bias] # [quad_bias] # 
 
-baselines = ['none', 'lp', 'lqr', 'ssr'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
+baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
 if 'mpc' not in baselines:
     deadline_for_all_methods = 100
 colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
@@ -431,5 +431,8 @@ for exp in exps:
     plt.legend()
     import time
     thistime = time.time()
-    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
+    if exp.name == 'cstr_bias':
+        plt.savefig(f'fig/{exp.name}_all_noise_{exp.noise["process"]["type"]}_{exp.noise_up_dim0}_{exp.noise_up_dim1}_detdelay{exp.recovery_index - exp.attack_start_index}_bias{exp.bias[exp.output_index]}.png', format='png', bbox_inches='tight')
+    else:
+        plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
     # plt.show()

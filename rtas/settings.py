@@ -112,22 +112,30 @@ class quadruple_tank_bias:
 # -------------------- cstr ----------------------------
 class cstr_bias:
     name = 'cstr_bias'
-    max_index = 160
+    max_index = 300
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
+    noise_up_dim0 = 0.1
+    noise_up_dim1 = 0.1
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0]), 'up': np.array([0.1, 0.1])} # change 0.01 to 1 or 5 or something
+            'param': {'lo': np.array([0, 0]), 'up': np.array([noise_up_dim0, noise_up_dim1])} # change 0.01 to 1 or 5 or something
         }
     }
+    # noise = {
+    #     'process': {
+    #         'type': 'white',
+    #         'param': {'C': np.diag([noise_up_dim0, noise_up_dim1])}
+    #     }
+    # }
     # noise = None
     model = CSTR(name, dt, max_index, noise=noise)
     ode_imath = cstr_imath
     
-    attack_start_index = 100 # index in time
-    recovery_index = 110 # index in time
-    bias = np.array([0, -30])
+    attack_start_index = 90 # index in time
+    recovery_index = 100 # index in time
+    bias = np.array([0, -25])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
     
