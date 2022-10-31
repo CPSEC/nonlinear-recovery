@@ -67,7 +67,7 @@ for exp in exps:
     # init variables
     recovery_complete_index = np.inf
     rec_u = None
-    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
+    linearize = Linearizer(ode=exp.model.ode, nx=exp.nx, nu=exp.nu, dt=exp.dt)
     non_est = NonlinearEstimator(exp.ode_imath, exp.dt)
 
     if 'mpc' in baselines:
@@ -150,7 +150,7 @@ for exp in exps:
 
     # required objects
     ## Linearize about steady state and Linear estimator (may be required for staqte reconstruction comparison)
-    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
+    linearize = Linearizer(ode=exp.model.ode, nx=exp.nx, nu=exp.nu, dt=exp.dt)
     A, B, c = linearize.at(exp.x_ss, exp.u_ss)  
     # est = Estimator(A, B, max_k=100, epsilon=1e-7)
 

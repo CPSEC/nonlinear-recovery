@@ -8,14 +8,14 @@ import pickle
 import sys
 sys.path.append('../')
 
-from settings import cstr_bias
+from settings import cstr_bias, quad_bias
 from simulators.nonlinear.continuous_stirred_tank_reactor import cstr
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
 
 # ready exp: lane_keeping,
-exps = [cstr_bias]
+exps = [quad_bias] # [cstr_bias]
 result = {}   # for print or plot
 for exp in exps:
 
@@ -31,7 +31,7 @@ for exp in exps:
 
     u_lo = exp.model.controller.control_lo
     u_up = exp.model.controller.control_up
-    linearize = Linearizer(ode=exp.model.ode, nx=2, nu=1, dt=exp.dt)
+    linearize = Linearizer(ode=exp.model.ode, nx=exp.nx, nu=exp.nu, dt=exp.dt)
     est = NonlinearEstimator(exp.ode_imath, exp.dt)
 
     recovery_complete_index = np.inf # init to big value
@@ -63,7 +63,7 @@ for exp in exps:
                 control = exp.model.inputs[i-1]
                 print(f'estimating deadline now...')
                 k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
-                # k=20
+                # k=35
                 print(f'deadline {k=}')
                 recovery_complete_index = exp.attack_start_index + k
 

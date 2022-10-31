@@ -20,7 +20,7 @@ def quad(t, x, u, use_imath=False):
 
     # States (12):
     phi, theta, psi, w_phi, w_theta, w_psi, x, y, z, v_x, v_y, v_z = x
-    U_t = u
+    U_t = u[0]
     U_phi = 0
     U_theta = 0
     U_psi  = 0
@@ -41,7 +41,7 @@ def quad(t, x, u, use_imath=False):
         U_t/mass * imath.cos(phi) * imath.cos(theta) - g
     ]
     else:
-        xdot = [
+        xdot = np.array([
         w_phi,
         w_theta,
         w_psi,
@@ -55,7 +55,7 @@ def quad(t, x, u, use_imath=False):
         U_t/mass * (math.cos(phi)* math.sin(theta) * math.cos(psi) + math.sin(phi) * math.sin(psi)),
         U_t/mass * (math.cos(phi)* math.sin(theta) * math.sin(psi) - math.sin(phi) * math.cos(psi)),
         U_t/mass * math.cos(phi) * math.cos(theta) - g
-    ]
+    ])
     # xdot = [
     #     0,
     #     0,
@@ -73,6 +73,7 @@ def quad(t, x, u, use_imath=False):
     # ]
     # Return xdot:
     return xdot
+    
 def quad_imath(t, x, u):
     return quad(t=t, x=x, u=u, use_imath=True)
 
