@@ -187,10 +187,10 @@ class quad_bias:
     output_index = 8 # index in state
     ref_index = 8 # index in state
 
-    target_set_lo = np.array([-109, -109, -109, -109, -109, -109, -109, -109, 5-0.02, -109, -109, -109])
-    target_set_up = np.array([109, 109, 109, 109, 109, 109, 109, 109, 5+0.02, 109, 109, 109])
-    safe_set_lo = np.array([-109, -109, -109, -109, -109, -109, -109, -109, 3, -109, -109, -109])
-    safe_set_up = np.array([109, 109, 109, 109, 109, 109, 109, 109, 7, 109, 109, 109])
+    target_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 5-0.02, -1e20, -1e20, -1e20])
+    target_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 5+0.02, 1e20, 1e20, 1e20])
+    safe_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 4, -1e20, -1e20, -1e20])
+    safe_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 15, 1e20, 1e20, 1e20])
 
 
     control_lo = np.array([-10])
