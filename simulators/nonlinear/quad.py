@@ -86,7 +86,7 @@ control_limit = {
 # control parameters
 
 
-KP = 42
+KP =  100
 KI = 0
 KD = -19
 class Controller:
