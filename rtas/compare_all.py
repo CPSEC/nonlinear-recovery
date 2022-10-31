@@ -6,6 +6,7 @@ from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import numpy as np
+import cvxpy as cp
 
 os.environ["RANDOM_SEED"] = '0'   # for reproducibility
 from settings import cstr_bias, quad_bias
@@ -14,11 +15,11 @@ from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
-exps = [quad_bias] # [cstr_bias]
+exps = [quad_bias] # [quad_bias] # 
 
-baselines = ['none', 'lp', 'lqr', 'ssr']
+baselines = ['none', 'lp', 'lqr', 'ssr'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
 if 'mpc' not in baselines:
-    deadline_for_all_methods = 96
+    deadline_for_all_methods = 100
 colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
 result = {}  
 
@@ -201,7 +202,8 @@ for exp in exps:
                     'ddl': k, 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
                     'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
                     'control_lo': exp.control_lo, 'control_up': exp.control_up,
-                    'ref': exp.recovery_ref
+                    'ref': exp.recovery_ref,
+                    'solver': cp.OSQP if exp.name == 'quad_bias' else cp.ECOS,
                 }
                 lp = LP(lp_settings)
                 _ = lp.update(feedback_value=x_cur)

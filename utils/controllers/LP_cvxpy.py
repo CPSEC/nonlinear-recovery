@@ -38,6 +38,8 @@ class LP(Controller):
             self.set_control_limit(kwargs['control_lo'], kwargs['control_up'])
         if 'ref' in kwargs:
             self.set_reference(kwargs['ref'])
+        if 'solver' in kwargs:
+            self.set_solver(kwargs['solver'])
 
         if 'c_nonlinear' in kwargs:
             self.update_model_residual(kwargs['c_nonlinear'])
@@ -145,7 +147,7 @@ class LP(Controller):
             self.formulate()
         else:
             self.formulate_only_x0()
-        self.prob.solve(warm_start=True)
+        self.prob.solve(solver=self.solver, warm_start=True)
 
         if self.prob.status != cp.OPTIMAL:
             print('did not get an optimal solution!')
@@ -173,3 +175,6 @@ class LP(Controller):
 
     def set_reference(self, ref: np.ndarray):
         self.xr = ref
+
+    def set_solver(self, solver):
+        self.solver = solver
