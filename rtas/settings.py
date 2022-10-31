@@ -7,6 +7,7 @@ from simulators.linear.motor_speed import MotorSpeed
 from simulators.linear.quadruple_tank import QuadrupleTank
 from simulators.nonlinear.continuous_stirred_tank_reactor import CSTR, cstr_imath
 from simulators.nonlinear.quad import quadrotor, quad_imath
+from simulators.nonlinear.inverted_pendulum import InvertedPendulum, inverted_pendulum_imath
 from utils.attack import Attack
 from utils.formal.strip import Strip
 
@@ -112,29 +113,21 @@ class quadruple_tank_bias:
 # -------------------- cstr ----------------------------
 class cstr_bias:
     name = 'cstr_bias'
-    max_index = 300
+    max_index = 160
     ref = [np.array([0.98189, 300.00013])] * (max_index+1)
     dt = 0.1
-    noise_up_dim0 = 0.1
-    noise_up_dim1 = 0.1
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0]), 'up': np.array([noise_up_dim0, noise_up_dim1])} # change 0.01 to 1 or 5 or something
+            'param': {'lo': np.array([0, 0]), 'up': np.array([0.1, 0.1])} # change 0.01 to 1 or 5 or something
         }
     }
-    # noise = {
-    #     'process': {
-    #         'type': 'white',
-    #         'param': {'C': np.diag([noise_up_dim0, noise_up_dim1])}
-    #     }
-    # }
     # noise = None
     model = CSTR(name, dt, max_index, noise=noise)
     ode_imath = cstr_imath
     
-    attack_start_index = 90 # index in time
-    recovery_index = 100 # index in time
+    attack_start_index = 100 # index in time
+    recovery_index = 110 # index in time
     bias = np.array([0, -30])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
@@ -227,3 +220,56 @@ class quad_bias:
     # for linearizations for baselines, find equilibrium point and use below
     u_ss = np.array([9.81])
     x_ss = np.array([0,0,0,0,0,0,0,0,5,0,0,0])
+
+
+    # -------------------- Inverted Pendulum ----------------------------
+class pendulum_bias:
+    name = 'pendulum_bias'
+    max_index = 800
+    ref = [np.array([1, 0, np.pi, 0])]  * (max_index+1)
+    dt = 0.02
+    noise = {
+        'process': {
+            'type': 'box_uniform',
+            'param': {'lo': np.array([0, 0, 0, 0]), 'up': np.array([0.0001, 0.0001, 0.0001, 0.0001])} # change 0.01 to 1 or 5 or something
+        }
+    }
+    # noise = None
+    model = InvertedPendulum(name, dt, max_index, noise=noise)
+    ode_imath = inverted_pendulum_imath
+    
+    attack_start_index = 500 # index in time
+    recovery_index = 510 # index in time
+    bias = np.array([0, 0, 0.005, 0])
+    unsafe_states_onehot = [0, 0, 1, 0]
+    attack = Attack('bias', bias, attack_start_index)
+    final = np.array([0, 0, np.pi, 0])
+    output_index = 2 # index in state
+    ref_index = 2 # index in state
+    safe_set_lo = [-10, -10, np.pi-0.1, -10]
+    safe_set_up = [10, 10, np.pi+0.1, 10]
+    target_set_lo = np.array([-10, -10, np.pi-0.1, -10])
+    target_set_up = np.array([10, 10, np.pi+0.1, 10])
+    control_lo = np.array([-50])
+    control_up = np.array([50])
+    recovery_ref = np.array([1, 0, np.pi, 0])
+
+    Q = np.eye(4)
+    Q[2, 2] = 100000
+    QN = np.eye(4)
+    QN[2, 2] = 100000
+    R = np.diag([10])
+
+    MPC_freq = 10
+    nx = 4
+    nu = 1
+
+    # plot
+    y_lim = (3, 3.3)
+    x_lim = (9.5, dt * 700)
+    strip = (target_set_lo[output_index], target_set_up[output_index])
+    y_label = 'Angle (Rad)'
+
+    # for linearizations for baselines, find equilibrium point and use below
+    u_ss = np.array([0])
+    x_ss = np.array([1, 0, 3.14, 0])
