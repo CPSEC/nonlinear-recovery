@@ -165,7 +165,7 @@ class cstr_bias:
 #---------------quadrotor----------------------------
 class quad_bias:
     name = 'quad_bias'
-    max_index = 220
+    max_index = 500
     ref = [np.array([0,0,0,0,0,0,0,0,5,0,0,0])] * (max_index+1)
     dt = 0.01
     noise = {
@@ -178,9 +178,9 @@ class quad_bias:
     model = quadrotor(name, dt, max_index, noise=noise)
     ode_imath = quad_imath
     
-    attack_start_index = 100 # index in time
-    recovery_index = 110 # index in time
-    bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, -0.1, 0, 0, 0])
+    attack_start_index = 250 # index in time
+    recovery_index = 260 # index in time
+    bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, -0.3, 0, 0, 0])
     unsafe_states_onehot = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
     attack = Attack('bias', bias, attack_start_index)
     

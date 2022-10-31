@@ -82,48 +82,49 @@ for exp in exps:
             if i == exp.attack_start_index - 1:
                 logger.debug(f'trustworthy_index={i}, trustworthy_state={exp.model.cur_x}')
             if exp.recovery_index <= i < recovery_complete_index:
-                logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
-                
-                # State reconstruction
-                us = exp.model.inputs[exp.attack_start_index - 1:i]
-                xs = exp.model.states[exp.attack_start_index - 1:i+1]
-                x_0 = exp.model.states[exp.attack_start_index - 1]
-                x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
-                logger.debug(f'reconstructed state={x_cur}')
+                if (i - exp.recovery_index) % exp.MPC_freq == 0:
+                    logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
+                    
+                    # State reconstruction
+                    us = exp.model.inputs[exp.attack_start_index - 1:i]
+                    xs = exp.model.states[exp.attack_start_index - 1:i+1]
+                    x_0 = exp.model.states[exp.attack_start_index - 1]
+                    x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                    logger.debug(f'reconstructed state={x_cur}')
 
-                # deadline estimate only once
-                if i == exp.recovery_index:
-                    safe_set_lo = exp.safe_set_lo
-                    safe_set_up = exp.safe_set_up
-                    control = exp.model.inputs[i-1]
-                    k = non_est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
-                    deadline_for_all_methods = k
-                    recovery_complete_index = exp.recovery_index + k
-                    logger.debug(f'deadline={k}')
-                # maintainable time compute
+                    # deadline estimate only once
+                    if i == exp.recovery_index:
+                        safe_set_lo = exp.safe_set_lo
+                        safe_set_up = exp.safe_set_up
+                        control = exp.model.inputs[i-1]
+                        k = non_est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
+                        deadline_for_all_methods = k
+                        recovery_complete_index = exp.recovery_index + k
+                        logger.debug(f'deadline={k}')
+                    # maintainable time compute
 
 
-                # Linearize and Discretize
-                # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
-                Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
+                    # Linearize and Discretize
+                    # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
+                    Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
 
-                # get recovery control sequence
-                mpc_settings = {
-                    'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
-                    'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
-                    'N': k+maintain_time+1-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
-                    'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
-                    'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
-                    'control_lo': exp.control_lo, 'control_up': exp.control_up,
-                    'ref': exp.recovery_ref
-                }
-                mpc = MPC(mpc_settings)
-                _ = mpc.update(feedback_value=x_cur)
-                rec_u = mpc.get_full_ctrl()
-                rec_x = mpc.get_last_x()
-                logger.debug(f'expected recovery state={rec_x}')
+                    # get recovery control sequence
+                    mpc_settings = {
+                        'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
+                        'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
+                        'N': k+maintain_time+1-(i-exp.recovery_index), # horizon (N) keeps decreasing in receding horizon MPC 
+                        'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
+                        'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
+                        'control_lo': exp.control_lo, 'control_up': exp.control_up,
+                        'ref': exp.recovery_ref
+                    }
+                    mpc = MPC(mpc_settings)
+                    _ = mpc.update(feedback_value=x_cur)
+                    rec_u = mpc.get_full_ctrl()
+                    rec_x = mpc.get_last_x()
+                    logger.debug(f'expected recovery state={rec_x}')
 
-                u = rec_u[0]
+                u = rec_u[(i - exp.recovery_index) % exp.MPC_freq]
                 exp.model.evolve(u)
                 print(f'after evolve - {exp.model.cur_x=}')
             elif recovery_complete_index <= i < recovery_complete_index + maintain_time + 1:
