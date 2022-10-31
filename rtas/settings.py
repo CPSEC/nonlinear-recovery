@@ -168,10 +168,11 @@ class quad_bias:
     max_index = 500
     ref = [np.array([0,0,0,0,0,0,0,0,5,0,0,0])] * (max_index+1)
     dt = 0.01
+    noise_term = 0.00024
     noise = {
         'process': {
             'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'up': np.array([0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001])} # change 0.01 to 1 or 5 or something
+            'param': {'lo': np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]), 'up': np.array([noise_term, noise_term, noise_term, noise_term, noise_term, noise_term, noise_term, noise_term, 0.0001, noise_term, noise_term, 0.0001])} # change 0.01 to 1 or 5 or something
         }
     }
     # noise = None
@@ -179,7 +180,7 @@ class quad_bias:
     ode_imath = quad_imath
     
     attack_start_index = 250 # index in time
-    recovery_index = 260 # index in time
+    recovery_index = 270 # index in time
     bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, -1, 0, 0, 0])
     unsafe_states_onehot = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
     attack = Attack('bias', bias, attack_start_index)
@@ -187,8 +188,8 @@ class quad_bias:
     output_index = 8 # index in state
     ref_index = 8 # index in state
 
-    target_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 5-5, -1e20, -1e20, -1e20])
-    target_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 10, 1e20, 1e20, 1e20])
+    target_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 5-0.2, -1e20, -1e20, -1e20])
+    target_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 5+0.2, 1e20, 1e20, 1e20])
     safe_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 0, -1e20, -1e20, -1e20])
     safe_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 200, 1e20, 1e20, 1e20])
 
@@ -200,9 +201,9 @@ class quad_bias:
     # Q = np.diag([1, 1])
     # QN = np.diag([1, 1])
     Q = np.eye(12)
-    Q[8, 8] = 1000
+    Q[8, 8] = 10000
     QN = np.eye(12)
-    QN[8, 8] = 1000
+    QN[8, 8] = 10000
     R = np.diag([10])
 
     MPC_freq = 10
@@ -210,8 +211,8 @@ class quad_bias:
     nu = 1
 
     # plot
-    y_lim = (0, 20)
-    x_lim = (0, 4)
+    y_lim = (4, 7)
+    x_lim = (2.4, 4)
     y_label = 'Altitude (M)'
     strip = (target_set_lo[output_index], target_set_up[output_index])
 
