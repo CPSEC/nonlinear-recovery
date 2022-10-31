@@ -165,7 +165,7 @@ class cstr_bias:
 #---------------quadrotor----------------------------
 class quad_bias:
     name = 'quad_bias'
-    max_index = 300
+    max_index = 220
     ref = [np.array([0,0,0,0,0,0,0,0,5,0,0,0])] * (max_index+1)
     dt = 0.01
     noise = {
@@ -205,13 +205,13 @@ class quad_bias:
     QN[8, 8] = 1000
     R = np.diag([10])
 
-    MPC_freq = 1
+    MPC_freq = 10
     nx = 12
     nu = 1
 
     # plot
-    y_lim = (8, 12)
-    x_lim = (dt*95, dt * 141)
+    y_lim = (0, 20)
+    x_lim = (0, 4)
     y_label = 'Altitude (M)'
     strip = (target_set_lo[output_index], target_set_up[output_index])
 

@@ -45,49 +45,50 @@ for exp in exps:
             print('normal_state=', exp.model.cur_x)
         if exp.recovery_index <= i < recovery_complete_index:
 
-            print(f'{i=:-^40}')
+            if (i - exp.recovery_index) % exp.MPC_freq == 0:
+                print(f'{i=:-^40}')
 
-            # x_0 estimation
-            us = exp.model.inputs[exp.attack_start_index:i]
-            xs = exp.model.states[exp.attack_start_index:i+1]
-            x_0 = exp.model.states[exp.attack_start_index]
-            print(f'estimating x_cur now...')
-            x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
-            print(f'{exp.attack_start_index=},{exp.recovery_index=}')
-            print(f'{x_cur_lo=},\n {x_cur_up=},\n {exp.model.states[i]=}')
+                # x_0 estimation
+                us = exp.model.inputs[exp.attack_start_index:i]
+                xs = exp.model.states[exp.attack_start_index:i+1]
+                x_0 = exp.model.states[exp.attack_start_index]
+                print(f'estimating x_cur now...')
+                x_cur_lo, x_cur_up, x_cur = est.estimate(x_0, us, xs, exp.unsafe_states_onehot)
+                print(f'{exp.attack_start_index=},{exp.recovery_index=}')
+                print(f'{x_cur_lo=},\n {x_cur_up=},\n {exp.model.states[i]=}')
 
-            # deadline estimate only once
-            if i == exp.recovery_index:
-                safe_set_lo = exp.safe_set_lo
-                safe_set_up = exp.safe_set_up
-                control = exp.model.inputs[i-1]
-                print(f'estimating deadline now...')
-                k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
-                # k=35
-                print(f'deadline {k=}')
-                recovery_complete_index = exp.attack_start_index + k
+                # deadline estimate only once
+                if i == exp.recovery_index:
+                    safe_set_lo = exp.safe_set_lo
+                    safe_set_up = exp.safe_set_up
+                    control = exp.model.inputs[i-1]
+                    print(f'estimating deadline now...')
+                    k = est.get_deadline(x_cur, safe_set_lo, safe_set_up, control, max_k=100)
+                    # k=35
+                    print(f'deadline {k=}')
+                    recovery_complete_index = exp.attack_start_index + k
 
-            # Linearize and Discretize
-            print(f'{i=},{x_cur=},x_gt={exp.model.cur_x}')
-            # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
-            Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
+                # Linearize and Discretize
+                print(f'{i=},{x_cur=},x_gt={exp.model.cur_x}')
+                # Ad, Bd, cd = analytical_linearize_cstr(x_cur, exp.model.inputs[i-1], exp.dt)  # (2, 2) (2, 1) (2,)
+                Ad, Bd, cd = linearize.at(x_cur, exp.model.inputs[i-1])  
 
-            # get recovery control sequence
-            mpc_settings = {
-                'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
-                'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
-                'N': k+3-(i-exp.recovery_index), # maintainable time=3! # receding horizon MPC!
-                'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
-                'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
-                'control_lo': exp.control_lo, 'control_up': exp.control_up,
-                'ref': exp.recovery_ref
-            }
-            mpc = MPC(mpc_settings)
-            _ = mpc.update(feedback_value=x_cur)
-            rec_u = mpc.get_full_ctrl()
-            # print(f'{x_cur=},{rec_u=}')
+                # get recovery control sequence
+                mpc_settings = {
+                    'Ad': Ad, 'Bd': Bd, 'c_nonlinear': cd,
+                    'Q': exp.Q, 'QN': exp.QN, 'R': exp.R,
+                    'N': k+3-(i-exp.recovery_index), # maintainable time=3! # receding horizon MPC!
+                    'ddl': k-(i-exp.recovery_index), 'target_lo': exp.target_set_lo, 'target_up': exp.target_set_up,
+                    'safe_lo': exp.safe_set_lo, 'safe_up': exp.safe_set_up,
+                    'control_lo': exp.control_lo, 'control_up': exp.control_up,
+                    'ref': exp.recovery_ref
+                }
+                mpc = MPC(mpc_settings)
+                _ = mpc.update(feedback_value=x_cur)
+                rec_u = mpc.get_full_ctrl()
+                # print(f'{x_cur=},{rec_u=}')
 
-            u = rec_u[0]
+            u = rec_u[(i - exp.recovery_index) % exp.MPC_freq]
             print(f'{u=}')
             exp.model.evolve(u)
             print(f'after evolve - {exp.model.cur_x=}')
@@ -122,7 +123,7 @@ for exp in exps:
     plt.xlim(exp.x_lim)
     plt.legend(loc='best')
     os.makedirs('./fig', exist_ok=True)
-    plt.savefig('./fig/'+exp.name+'_MPC.png', format='png', bbox_inches='tight')
+    plt.savefig('./fig/'+exp.name+f'_MPC_{exp.MPC_freq}freq.png', format='png', bbox_inches='tight')
     # plt.show()
 
 
