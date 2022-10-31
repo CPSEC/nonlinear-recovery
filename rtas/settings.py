@@ -135,7 +135,7 @@ class cstr_bias:
     
     attack_start_index = 90 # index in time
     recovery_index = 100 # index in time
-    bias = np.array([0, -25])
+    bias = np.array([0, -30])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
     

@@ -7,6 +7,8 @@ from copy import deepcopy
 import matplotlib.pyplot as plt
 import numpy as np
 import cvxpy as cp
+import time
+import json
 
 os.environ["RANDOM_SEED"] = '0'   # for reproducibility
 from settings import cstr_bias, quad_bias
@@ -22,6 +24,7 @@ if 'mpc' not in baselines:
     deadline_for_all_methods = 100
 colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
 result = {}  
+overhead_dict = {}
 
 # logger
 logging.basicConfig(
@@ -44,6 +47,7 @@ for exp in exps:
         bl = 'none'
         exp_name = f" {bl} {exp.name} "
         logger.info(f"{exp_name:=^40}")
+        starttime = time.time()
         for i in range(0, exp.max_index + 1):
             assert exp.model.cur_index == i
             exp.model.update_current_ref(exp.ref[i])
@@ -54,6 +58,8 @@ for exp in exps:
             if i == exp.recovery_index:
                 logger.debug(f'recovery_index={i}, recovery_start_state={exp.model.cur_x}')
             exp.model.evolve()
+        
+        overhead_dict[bl] = time.time() - starttime
         exp_rst[bl] = {}
         exp_rst[bl]['refs'] = deepcopy(exp.model.refs)
         exp_rst[bl]['states'] = deepcopy(exp.model.states)
@@ -77,6 +83,7 @@ for exp in exps:
         bl = 'mpc'
         exp_name = f" {bl} {exp.name} "
         logger.info(f"{exp_name:=^40}")
+        starttime = time.time()
         for i in range(0, exp.max_index + 1):
             assert exp.model.cur_index == i
             exp.model.update_current_ref(exp.ref[i])
@@ -142,6 +149,7 @@ for exp in exps:
             else:
                 exp.model.evolve()
 
+        overhead_dict[bl] = time.time() - starttime
         exp_rst[bl] = {}
         exp_rst[bl]['states'] = deepcopy(exp.model.states)
         exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
@@ -166,6 +174,7 @@ for exp in exps:
         bl = 'lp'
         exp_name = f" {bl} {exp.name} "
         logger.info(f"{exp_name:=^40}")
+        starttime = time.time()
         for i in range(0, exp.max_index + 1):
             assert exp.model.cur_index == i
             exp.model.update_current_ref(exp.ref[i])
@@ -223,6 +232,7 @@ for exp in exps:
             else:
                 exp.model.evolve()
 
+        overhead_dict[bl] = time.time() - starttime
         exp_rst[bl] = {}
         exp_rst[bl]['states'] = deepcopy(exp.model.states)
         exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
@@ -243,6 +253,7 @@ for exp in exps:
         bl = 'lqr'
         exp_name = f" {bl} {exp.name} "
         logger.info(f"{exp_name:=^40}")
+        starttime = time.time()
         for i in range(0, exp.max_index + 1):
             assert exp.model.cur_index == i
             exp.model.update_current_ref(exp.ref[i])
@@ -306,6 +317,7 @@ for exp in exps:
             else:
                 exp.model.evolve()
 
+        overhead_dict[bl] = time.time() - starttime
         exp_rst[bl] = {}
         exp_rst[bl]['states'] = deepcopy(exp.model.states)
         exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
@@ -334,6 +346,7 @@ for exp in exps:
         bl = 'ssr'
         exp_name = f" {bl} {exp.name} "
         logger.info(f"{exp_name:=^40}")
+        starttime = time.time()
         for i in range(0, exp.max_index + 1):
             assert exp.model.cur_index == i
             exp.model.update_current_ref(exp.ref[i])
@@ -377,6 +390,7 @@ for exp in exps:
                 # print(f'{exp.model.cur_u}')
             exp.model.evolve()
 
+        overhead_dict[bl] = time.time() - starttime
         exp_rst[bl] = {}
         exp_rst[bl]['states'] = deepcopy(exp.model.states)
         exp_rst[bl]['outputs'] = deepcopy(exp.model.outputs)
@@ -429,10 +443,12 @@ for exp in exps:
     plt.ylabel(exp.y_label)
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
-    import time
-    thistime = time.time()
+    os.makedirs(f'fig', exist_ok=True)
     if exp.name == 'cstr_bias':
         plt.savefig(f'fig/{exp.name}_all_noise_{exp.noise["process"]["type"]}_{exp.noise_up_dim0}_{exp.noise_up_dim1}_detdelay{exp.recovery_index - exp.attack_start_index}_bias{exp.bias[exp.output_index]}.png', format='png', bbox_inches='tight')
     else:
         plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
+
+    with open("fig/overhead.txt", "w") as file:
+        file.write(json.dumps(overhead_dict))
     # plt.show()
