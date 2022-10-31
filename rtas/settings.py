@@ -180,17 +180,17 @@ class quad_bias:
     
     attack_start_index = 250 # index in time
     recovery_index = 260 # index in time
-    bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, -0.3, 0, 0, 0])
+    bias = np.array([0, 0, 0, 0, 0 ,0, 0, 0, -1, 0, 0, 0])
     unsafe_states_onehot = [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]
     attack = Attack('bias', bias, attack_start_index)
     
     output_index = 8 # index in state
     ref_index = 8 # index in state
 
-    target_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 5-0.02, -1e20, -1e20, -1e20])
-    target_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 5+0.02, 1e20, 1e20, 1e20])
-    safe_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 4, -1e20, -1e20, -1e20])
-    safe_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 15, 1e20, 1e20, 1e20])
+    target_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 5-5, -1e20, -1e20, -1e20])
+    target_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 10, 1e20, 1e20, 1e20])
+    safe_set_lo = np.array([-1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, -1e20, 0, -1e20, -1e20, -1e20])
+    safe_set_up = np.array([1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 1e20, 200, 1e20, 1e20, 1e20])
 
 
     control_lo = np.array([-10])

@@ -8,15 +8,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 os.environ["RANDOM_SEED"] = '0'   # for reproducibility
-from settings import cstr_bias
+from settings import cstr_bias, quad_bias
 from utils.observers.full_state_bound import Estimator
 from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
-exps = [cstr_bias]
+exps = [quad_bias] # [cstr_bias]
 
-baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc']
+baselines = ['none', 'lp', 'lqr', 'ssr']
+if 'mpc' not in baselines:
+    deadline_for_all_methods = 96
 colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
 result = {}  
 
@@ -271,8 +273,8 @@ for exp in exps:
 
 
                 # get recovery control sequence
-                Q_lqr = np.diag([1, 1])
-                QN_lqr = np.diag([1, 1])
+                Q_lqr = np.diag([1]*exp.nx)
+                QN_lqr = np.diag([1]*exp.nx)
                 R_lqr = np.diag([1])
                 lqr_settings = {
                     'Ad': A, 'Bd': B, 'c_nonlinear': c,
