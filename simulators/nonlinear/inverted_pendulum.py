@@ -2,6 +2,7 @@
 
 import numpy as np
 from utils import Simulator, LQR
+from interval import imath
 
 # parameters
 m = 1  # mass of rob
@@ -12,20 +13,36 @@ d = 1  # dumping (friction)
 b = 1  # pendulum up (b=1)
 
 
-def inverted_pendulum(t, x, u, params={}):
-    Sx = np.sin(x[2])
-    Cx = np.cos(x[2])
-    D = m * L * L * (M + m * (1 - Cx * Cx))
+def inverted_pendulum(t, x, u, use_imath=False):
+    u=u[0]
+    if use_imath:
+        Sx = imath.sin(x[2])
+        Cx = imath.cos(x[2])
+        D = m * L * L * (M + m * (1 - Cx * Cx))
 
-    dx = np.zeros((4,))
-    dx[0] = x[1]
-    dx[1] = (1 / D) * (-m * m * L * L * g * Cx * Sx + m * L * L * (m * L * x[3] * x[3] * Sx - d * x[1])) + m * L * L * (
-            1 / D) * u
-    dx[2] = x[3]
-    dx[3] = (1 / D) * ((m + M) * m * g * L * Sx - m * L * Cx * (m * L * x[3] * x[3] * Sx - d * x[1])) - m * L * Cx * (
-            1 / D) * u
+        dx = [0,0,0,0]
+        dx[0] = x[1]
+        dx[1] = (1 / D) * (-m * m * L * L * g * Cx * Sx + m * L * L * (m * L * x[3] * x[3] * Sx - d * x[1])) + m * L * L * (
+                1 / D) * u
+        dx[2] = x[3]
+        dx[3] = (1 / D) * ((m + M) * m * g * L * Sx - m * L * Cx * (m * L * x[3] * x[3] * Sx - d * x[1])) - m * L * Cx * (
+                1 / D) * u
+    else:
+        Sx = np.sin(x[2])
+        Cx = np.cos(x[2])
+        D = m * L * L * (M + m * (1 - Cx * Cx))
+
+        dx = np.zeros((4,))
+        dx[0] = x[1]
+        dx[1] = (1 / D) * (-m * m * L * L * g * Cx * Sx + m * L * L * (m * L * x[3] * x[3] * Sx - d * x[1])) + m * L * L * (
+                1 / D) * u
+        dx[2] = x[3]
+        dx[3] = (1 / D) * ((m + M) * m * g * L * Sx - m * L * Cx * (m * L * x[3] * x[3] * Sx - d * x[1])) - m * L * Cx * (
+                1 / D) * u
     return dx
 
+def inverted_pendulum_imath(t, x, u):
+    return inverted_pendulum(t=t,x=x,u=u, use_imath=True)
 
 x_0 = np.array([-1, 0, np.pi + 0.1, 0])
 control_limit = {
@@ -41,7 +58,7 @@ A = np.array([[0, 1, 0, 0],
 B = np.array([[0], [1 / M], [0], [b * 1 / (M * L)]])
 
 R = np.array([[0.0001]])
-Q = np.eye(4)
+Q = np.eye(4)*10
 
 
 class Controller:
@@ -53,6 +70,8 @@ class Controller:
         self.lqr.set_reference(ref)
         cin = self.lqr.update(feedback_value, current_time)
         return cin
+    def clear(self):
+        return
 
 
 class InvertedPendulum(Simulator):
@@ -115,4 +134,5 @@ if __name__ == "__main__":
     u_arr = [x[0] for x in ip.inputs[:max_index + 1]]
     ax3.set_title('u-force')
     ax3.plot(t_arr, u_arr)
+    print(u_arr)
     plt.show()
