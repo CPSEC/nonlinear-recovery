@@ -8,6 +8,7 @@ from simulators.linear.quadruple_tank import QuadrupleTank
 from simulators.nonlinear.continuous_stirred_tank_reactor import CSTR, cstr_imath
 from simulators.nonlinear.quad import quadrotor, quad_imath
 from simulators.nonlinear.inverted_pendulum import InvertedPendulum, inverted_pendulum_imath
+from simulators.nonlinear.vessel import VESSEL, deg2rad, heading_circle, kn2ms, whole_model_imath
 from utils.attack import Attack
 from utils.formal.strip import Strip
 
@@ -122,18 +123,12 @@ class cstr_bias:
             'param': {'lo': np.array([0, 0]), 'up': np.array([0.1, 0.1])} # change 0.01 to 1 or 5 or something
         }
     }
-    # noise = {
-    #     'process': {
-    #         'type': 'white',
-    #         'param': {'C': np.diag([noise_up_dim0, noise_up_dim1])}
-    #     }
-    # }
     # noise = None
     model = CSTR(name, dt, max_index, noise=noise)
     ode_imath = cstr_imath
     
-    attack_start_index = 90 # index in time
-    recovery_index = 100 # index in time
+    attack_start_index = 100 # index in time
+    recovery_index = 110 # index in time
     bias = np.array([0, -30])
     unsafe_states_onehot = [0, 1]
     attack = Attack('bias', bias, attack_start_index)
@@ -208,9 +203,9 @@ class quad_bias:
     # Q = np.diag([1, 1])
     # QN = np.diag([1, 1])
     Q = np.eye(12)
-    Q[8, 8] = 10000
+    Q[8, 8] = 100000
     QN = np.eye(12)
-    QN[8, 8] = 10000
+    QN[8, 8] = 100000
     R = np.diag([10])
 
     MPC_freq = 10
@@ -234,48 +229,106 @@ class pendulum_bias:
     max_index = 800
     ref = [np.array([1, 0, np.pi, 0])]  * (max_index+1)
     dt = 0.02
-    noise = {
-        'process': {
-            'type': 'box_uniform',
-            'param': {'lo': np.array([0, 0, 0, 0]), 'up': np.array([0.0001, 0.0001, 0.0001, 0.0001])} # change 0.01 to 1 or 5 or something
-        }
-    }
-    # noise = None
+    # noise = {
+    #     'process': {
+    #         'type': 'box_uniform',
+    #         'param': {'lo': np.array([0, 0, 0, 0]), 'up': np.array([0.0001, 0.0001, 0.0001, 0.0001])} # change 0.01 to 1 or 5 or something
+    #     }
+    # }
+    noise = None
     model = InvertedPendulum(name, dt, max_index, noise=noise)
     ode_imath = inverted_pendulum_imath
     
-    attack_start_index = 500 # index in time
-    recovery_index = 510 # index in time
-    bias = np.array([0, 0, 0.005, 0])
+    attack_start_index = 300 # index in time
+    recovery_index = 330 # index in time
+    bias = np.array([0, 0, 0.01, 0])
     unsafe_states_onehot = [0, 0, 1, 0]
     attack = Attack('bias', bias, attack_start_index)
     final = np.array([0, 0, np.pi, 0])
     output_index = 2 # index in state
     ref_index = 2 # index in state
-    safe_set_lo = [-10, -10, np.pi-0.1, -10]
-    safe_set_up = [10, 10, np.pi+0.1, 10]
-    target_set_lo = np.array([-10, -10, np.pi-0.1, -10])
-    target_set_up = np.array([10, 10, np.pi+0.1, 10])
+    safe_set_lo = [-100000, -100000, np.pi-2, -100000]
+    safe_set_up = [100000, 100000, np.pi+2, 100000]
+    target_set_lo = np.array([-100000, -100000, np.pi-2, -100000])
+    target_set_up = np.array([100000, 100000, np.pi+2, 100000])
     control_lo = np.array([-50])
     control_up = np.array([50])
     recovery_ref = np.array([1, 0, np.pi, 0])
 
     Q = np.eye(4)
-    Q[2, 2] = 100000
+    Q[0, 0] = 100
     QN = np.eye(4)
-    QN[2, 2] = 100000
+    QN[0, 0] = 100
     R = np.diag([10])
 
-    MPC_freq = 10
+    MPC_freq = 1
     nx = 4
     nu = 1
 
     # plot
-    y_lim = (3, 3.3)
-    x_lim = (9.5, dt * 700)
+    y_lim = (2.5, 4)
+    x_lim = (5.5, dt * 700)
     strip = (target_set_lo[output_index], target_set_up[output_index])
     y_label = 'Angle (Rad)'
 
     # for linearizations for baselines, find equilibrium point and use below
     u_ss = np.array([0])
     x_ss = np.array([1, 0, 3.14, 0])
+
+    #---------------vessel----------------------------
+class vessel_bias:
+    name = 'vessel_bias'
+    max_index = 500
+    ref = [np.array([0, 0, heading_circle(deg2rad(90)), kn2ms(1), 0,0,0,0])] * (max_index+1)
+    dt = 1
+    noise_term = 0.015
+    noise = {
+        'process': {
+            'type': 'box_uniform',
+            'param': {'lo': np.array([0, 0, 0, 0, 0, 0, 0, 0]), 'up': np.array([noise_term, noise_term, noise_term, 0.0001, noise_term, noise_term, noise_term, noise_term])} # change 0.01 to 1 or 5 or something
+        }
+    }
+    # noise = None
+    model = VESSEL(name, dt, max_index, noise=noise)
+    ode_imath = whole_model_imath
+    
+    attack_start_index = 300 # index in time
+    recovery_index = 310 # index in time
+    bias = np.array([0, 0, 0, -0.5, 0 ,0, 0, 0])
+    unsafe_states_onehot = [0, 0, 0, 1, 0, 0, 0, 0]
+    attack = Attack('bias', bias, attack_start_index)
+    
+    output_index = 3 # index in state
+    ref_index = 3 # index in state
+
+    target_set_lo = np.array([-1e20, -1e20, -1e20, 0.5, -1e20, -1e20, -1e20, -1e20])
+    target_set_up = np.array([1e20, 1e20, 1e20, 0.9, 1e20, 1e20, 1e20, 1e20])
+    safe_set_lo = np.array([-1e20, -1e20, -1e20, -1500, -1e20, -1e20, -1e20, -1e20])
+    safe_set_up = np.array([1e20, 1e20, 1e20, 1500, 1e20, 1e20, 1e20, 1e20])
+
+
+    control_lo = np.array([0, -1])
+    control_up = np.array([2, 1])
+    recovery_ref = np.array([0, 0, heading_circle(deg2rad(90)), kn2ms(1), 0,0,0,0])
+
+    # Q = np.diag([1, 1])
+    # QN = np.diag([1, 1])
+    Q = np.eye(8)
+    Q[3, 3] = 10000000
+    QN = np.eye(8)
+    QN[3, 3] = 10000000
+    R = np.diag([10, 10])
+
+    MPC_freq = 1
+    nx = 8
+    nu = 2
+
+    # plot
+    y_lim = (0, 2.5)
+    x_lim = (295, 500)
+    y_label = 'Speed(m/s)'
+    strip = (target_set_lo[output_index], target_set_up[output_index])
+
+    # for linearizations for baselines, find equilibrium point and use below
+    u_ss = np.array([0.1,0])
+    x_ss = np.array([0, 0, heading_circle(deg2rad(90)), kn2ms(1), 0,0,0,0])
