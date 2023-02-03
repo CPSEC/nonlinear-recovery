@@ -14,8 +14,18 @@ from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
 
-# ready exp: lane_keeping,
-exps = [quad_bias] # [cstr_bias]
+# parse experiment simulator
+import argparse
+parser = argparse.ArgumentParser(description='Parse simulator.')
+parser.add_argument('--sim', default='cstr_bias', help='cstr_bias, quad_bias, or vessel_bias')
+args = parser.parse_args()
+if args.sim == 'cstr_bias':
+    exps = [cstr_bias] 
+elif args.sim == 'quad_bias':
+    exps = [quad_bias]
+elif args.sim == 'vessel_bias':
+    exps = [vessel_bias]
+    
 result = {}   # for print or plot
 for exp in exps:
 
