@@ -17,7 +17,18 @@ from utils.controllers.LP_cvxpy import LP
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
-exps = [cstr_bias] # [quad_bias] # 
+
+# parse experiment simulator
+import argparse
+parser = argparse.ArgumentParser(description='Parse simulator.')
+parser.add_argument('--sim', default='cstr_bias', help='cstr_bias, quad_bias, or vessel_bias')
+args = parser.parse_args()
+if args.sim == 'cstr_bias':
+    exps = [cstr_bias] 
+elif args.sim == 'quad_bias':
+    exps = [quad_bias]
+elif args.sim == 'vessel_bias':
+    exps = [vessel_bias]
 
 baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
 if 'mpc' not in baselines:
