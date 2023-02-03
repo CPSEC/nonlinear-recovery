@@ -20,7 +20,8 @@ Plots will be produced and saved inside rtas/figs folder.
 
 ## Information
 
-The compare_all.py file compares all recovery methods and saves a plot in rtas/figs folder.
-The mpc_only.py file only executed our proposed data-predictive recovery algorithm and plots the recovery in the same folder.
-The setting for each simulator experiment can be found in rtas/settings.py.
+* The compare_all.py file compares all recovery methods and saves a plot in rtas/figs folder.
+* The mpc_only.py file only executes our proposed data-predictive recovery algorithm and saves a plot in the same folder.
+* The setting for each bias attack experiment can be found in rtas/settings.py.
+* the simulators can be found in nonlinear-recovery/simulators/nonlinear
 
