@@ -8,24 +8,14 @@ import pickle
 import sys
 sys.path.append('../')
 
-from settings import cstr_bias, quad_bias
+from settings import cstr_bias, quad_bias, pendulum_bias, vessel_bias
 from simulators.nonlinear.continuous_stirred_tank_reactor import cstr
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
 from utils.control.linearizer import Linearizer, analytical_linearize_cstr
 
-# parse experiment simulator
-import argparse
-parser = argparse.ArgumentParser(description='Parse simulator.')
-parser.add_argument('--sim', default='cstr_bias', help='cstr_bias, quad_bias, or vessel_bias')
-args = parser.parse_args()
-if args.sim == 'cstr_bias':
-    exps = [cstr_bias] 
-elif args.sim == 'quad_bias':
-    exps = [quad_bias]
-elif args.sim == 'vessel_bias':
-    exps = [vessel_bias]
-    
+# ready exp: lane_keeping,
+exps = [vessel_bias] # [pendulum_bias]#[quad_bias] # [cstr_bias]
 result = {}   # for print or plot
 for exp in exps:
 

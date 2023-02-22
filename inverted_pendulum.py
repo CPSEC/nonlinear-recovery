@@ -2,8 +2,9 @@
 
 import numpy as np
 from utils import Simulator, LQR
+import sys
 from interval import imath
-
+sys.path.append('../')
 # parameters
 m = 1  # mass of rob
 M = 5  # mass of cart
@@ -14,13 +15,12 @@ b = 1  # pendulum up (b=1)
 
 
 def inverted_pendulum(t, x, u, use_imath=False):
-    u=u[0]
     if use_imath:
         Sx = imath.sin(x[2])
         Cx = imath.cos(x[2])
         D = m * L * L * (M + m * (1 - Cx * Cx))
 
-        dx = [0,0,0,0]
+        dx = imath.zeros((4,))
         dx[0] = x[1]
         dx[1] = (1 / D) * (-m * m * L * L * g * Cx * Sx + m * L * L * (m * L * x[3] * x[3] * Sx - d * x[1])) + m * L * L * (
                 1 / D) * u
@@ -58,24 +58,19 @@ A = np.array([[0, 1, 0, 0],
 B = np.array([[0], [1 / M], [0], [b * 1 / (M * L)]])
 
 R = np.array([[0.0001]])
-Q = np.eye(4)*10
+Q = np.eye(4)
 Q[2,2] = 1000
+
 
 class Controller:
     def __init__(self, dt, control_limit=None):
         self.lqr = LQR(A, B, Q, R)
-        self.set_control_limit(control_limit['lo'], control_limit['up'])
+        self.lqr.set_control_limit(control_limit['lo'], control_limit['up'])
 
     def update(self, ref: np.ndarray, feedback_value: np.ndarray, current_time) -> np.ndarray:
         self.lqr.set_reference(ref)
         cin = self.lqr.update(feedback_value, current_time)
         return cin
-    def set_control_limit(self, control_lo, control_up):
-        self.control_lo = control_lo
-        self.control_up = control_up
-        self.lqr.set_control_limit(self.control_lo[0], self.control_up[0])
-    def clear(self):
-        return
 
 
 class InvertedPendulum(Simulator):
@@ -107,13 +102,13 @@ class InvertedPendulum(Simulator):
 
 
 if __name__ == "__main__":
-    max_index = 800
+    max_index = 1800
     dt = 0.02
     ref = [np.array([1, 0, np.pi, 0])] * (max_index+1)
     # bias attack example
     from utils import Attack
-    bias = np.array([-1, 0, 0, 0])
-    bias_attack = Attack('bias', bias, 300)
+    bias = np.array([0, 0, 0.1, 0])
+    bias_attack = Attack('bias', bias, 500)
     ip = InvertedPendulum('test', dt, max_index)
     for i in range(0, max_index + 1):
         assert ip.cur_index == i
