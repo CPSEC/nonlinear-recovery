@@ -2,6 +2,7 @@ import numpy as np
 from utils import Simulator
 from utils.controllers.PID_incremental import PID
 from interval import imath
+from numpy import exp
 
 # Parameters:
 # Volumetric Flowrate (m^3/sec)
@@ -61,6 +62,31 @@ def cstr(t, x, u, Tf=350, Caf=1, use_imath=False):
 
 def cstr_imath(t, x, u, Tf=350, Caf=1):
     return cstr(t=t, x=x, u=u, Tf=Tf, Caf=Caf, use_imath=True)
+
+
+def f(x, u, dt):
+    dx = cstr(None, x, u)
+    return x + dt * dx
+
+def jfx(x, u, dt):
+    Ca = x[0]
+    T = x[1]
+    Tc = u[0]
+    Ad = np.array([
+        [dt * (-k0 * exp(-EoverR / T) - q / V) + 1, -Ca * EoverR * dt * k0 * exp(-EoverR / T) / T ** 2],
+        [dt * k0 * mdelH * exp(-EoverR / T) / (Cp * rho),
+         dt * (Ca * EoverR * k0 * mdelH * exp(-EoverR / T) / (Cp * T ** 2 * rho) - q / V - UA / (Cp * V * rho)) + 1]])
+    return Ad
+
+def jfu(x, u, dt):
+    Ca = x[0]
+    T = x[1]
+    Tc = u[0]
+    Bd = np.array([
+        [0],
+        [UA * dt / (Cp * V * rho)]])
+    return Bd
+
 
 # initial states
 x_0 = np.array([0.98, 280])
