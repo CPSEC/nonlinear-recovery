@@ -455,10 +455,7 @@ for exp in exps:
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
     os.makedirs(f'fig', exist_ok=True)
-    if exp.name == 'cstr_bias':
-        plt.savefig(f'fig/{exp.name}_all_noise_{exp.noise["process"]["type"]}_{exp.noise_up_dim0}_{exp.noise_up_dim1}_detdelay{exp.recovery_index - exp.attack_start_index}_bias{exp.bias[exp.output_index]}.png', format='png', bbox_inches='tight')
-    else:
-        plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
+    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
 
     with open("fig/overhead.txt", "w") as file:
         file.write(json.dumps(overhead_dict))

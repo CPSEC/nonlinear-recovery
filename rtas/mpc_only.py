@@ -8,7 +8,7 @@ import pickle
 import sys
 sys.path.append('../')
 
-from settings import cstr_bias, quad_bias
+from settings import cstr_bias, quad_bias, vessel_bias
 from simulators.nonlinear.continuous_stirred_tank_reactor import cstr
 from utils.controllers.MPC_cvxpy import MPC
 from utils.observers.full_state_bound_nonlinear import NonlinearEstimator
