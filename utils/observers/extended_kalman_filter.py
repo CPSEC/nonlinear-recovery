@@ -2,9 +2,10 @@ import numpy as np
 from scipy.linalg import inv
 
 class ExtendedKalmanFilter:
-    def __init__(self, f, jf, jh, Q: np.ndarray, R: np.ndarray):
+    def __init__(self, f, jf, jh, dt, Q: np.ndarray, R: np.ndarray):
         self.A = []
         self.C = []
+        self.dt = dt
         self.Q = Q
         self.R = R
         self.f = f
@@ -12,10 +13,10 @@ class ExtendedKalmanFilter:
         self.jh = jh
 
     def predict(self, x: np.ndarray, P: np.ndarray, u: np.ndarray):
-        x_predict = self.f(x, u)
-        self.A = self.jf(x, u)
+        x_predict = self.f(x, u, self.dt)
+        self.A = self.jf(x, u, self.dt)
         # print(self.A)
-        self.C = self.jh(x, u)
+        self.C = self.jh(x, u, self.dt)
         P_predict = self.A @ P @ self.A.T + self.Q
         return x_predict, P_predict
 

@@ -8,15 +8,23 @@ Install required python packages.
 pip install -r requirements.txt
 ```
 
-## Running the code for cstr, quadrotor, and vessel
+## Running the code
+For cstr, quadrotor, and vessel reocvery.
 ```
 cd rtas
 python compare_all.py --sim cstr_bias
 python compare_all.py --sim quad_bias
 python compare_all.py --sim vessel_bias
 ```
+The above will reproduce the plots in Figure 8 and save it in rtas/fig.
 
-Plots will be produced and saved inside rtas/figs folder.
+For quadrotor recovery with observer.
+```
+python compare_all_including_obs.py
+```
+The above will reproduce the middle plot in Figure 8.
+
+For sensitivity analysis, change the settings in each class in rtas/settings.py. Rerun the above lines to reproduce the plots for the new settings.
 
 ## Information
 

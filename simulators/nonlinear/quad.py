@@ -77,6 +77,38 @@ def quad(t, x, u, use_imath=False):
 def quad_imath(t, x, u):
     return quad(t=t, x=x, u=u, use_imath=True)
 
+def quad_jfx(x, u, dt):
+    # More Parameters:
+    Ix = 5 * 0.001
+    Iy = 5 * 0.001
+    Iz = 5 * 0.001 # values from https://repository.upenn.edu/cgi/viewcontent.cgi?article=1705&context=edissertations
+    mass = 1
+    g = 9.81
+
+    # States (12):
+    phi, theta, psi, w_phi, w_theta, w_psi, x, y, z, v_x, v_y, v_z = x
+    U_t = u[0]
+    U_phi = 0
+    U_theta = 0
+    U_psi  = 0
+
+    Jacobian = np.array([
+    [                                                              1,                                        0,                                                              0,                      dt,                     0,                       0, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        1,                                                              0,                       0,                    dt,                       0, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        0,                                                              1,                       0,                     0,                      dt, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        0,                                                              0,                       1, dt*w_psi*(Iy - Iz)/Ix, dt*w_theta*(Iy - Iz)/Ix, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        0,                                                              0,                       0,                     1,                       0, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        0,                                                              0, dt*w_theta*(Ix - Iy)/Iz, dt*w_phi*(Ix - Iy)/Iz,                       1, 0, 0, 0,  0,  0,  0],
+    [                                                              0,                                        0,                                                              0,                       0,                     0,                       0, 1, 0, 0, dt,  0,  0],
+    [                                                              0,                                        0,                                                              0,                       0,                     0,                       0, 0, 1, 0,  0, dt,  0],
+    [                                                              0,                                        0,                                                              0,                       0,                     0,                       0, 0, 0, 1,  0,  0, dt],
+    [U_t*dt*(-math.sin(phi)*math.sin(theta)*math.cos(psi) + math.sin(psi)*math.cos(phi))/mass, U_t*dt*math.cos(phi)*math.cos(psi)*math.cos(theta)/mass, U_t*dt*(math.sin(phi)*math.cos(psi) - math.sin(psi)*math.sin(theta)*math.cos(phi))/mass,                       0,                     0,                       0, 0, 0, 0,  1,  0,  0],
+    [U_t*dt*(-math.sin(phi)*math.sin(psi)*math.sin(theta) - math.cos(phi)*math.cos(psi))/mass, U_t*dt*math.sin(psi)*math.cos(phi)*math.cos(theta)/mass, U_t*dt*(math.sin(phi)*math.sin(psi) + math.sin(theta)*math.cos(phi)*math.cos(psi))/mass,                       0,                     0,                       0, 0, 0, 0,  0,  1,  0],
+    [                               -U_t*dt*math.sin(phi)*math.cos(theta)/mass,         -U_t*dt*math.sin(theta)*math.cos(phi)/mass,                                                              0,                       0,                     0,                       0, 0, 0, 0,  0,  0,  1]
+    ])
+
+    return Jacobian
+
 x_0 = np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 control_limit = {
     'lo': np.array([-10]),
