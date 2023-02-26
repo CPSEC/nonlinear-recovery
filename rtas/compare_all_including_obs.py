@@ -114,19 +114,16 @@ for exp in exps:
                     x_0_privileged = exp.model.states[exp.attack_start_index - 1]
                     P_0 = np.eye(len(x_0_privileged))
 
-                    # EKF
+                    ## States Obtained Directly Before EKF
+                    # xs = exp.model.states[exp.attack_start_index - 1:i+1]
+                    
+                    # States Estimated After EKF
                     xs_privileged = exp.model.states[exp.attack_start_index:i+1] # starting after x_0_privileged because x_0_privileged is given to EKF as a separate argument
-                    # print(f'{us.shape=}')
-                    # print(f'{xs_privileged.shape=}')
                     ys_observed = np.array([exp.C_during_atk @ x for x in xs_privileged])
-                    # print(f'{ys_observed.shape=}')
-                    # if i == exp.recovery_index:
-                    xs_estimated, Ps = EKF_during_atk.multi_steps(x_0_privileged, P_0, us, ys_observed)
-                    # print(f'{xs_estimated.shape=}')
-                    # print(f'{Ps.shape=}')
-                    # exit()
+                    xs, Ps = EKF_during_atk.multi_steps(x_0_privileged, P_0, us, ys_observed) # here we get the estimated xs
 
-                    x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0_privileged, us, xs_estimated, exp.unsafe_states_onehot)
+                    x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0_privileged, us, xs, exp.unsafe_states_onehot)
+                    
                     logger.debug(f'reconstructed state={x_cur}')
 
                     # deadline estimate only once
