@@ -226,7 +226,7 @@ class quad_bias:
     C_during_atk = np.diag([0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0])
     f = lambda x, u, dt: x + dt * quad(None, x, u)
     jh = lambda x, u, dt: np.diag([0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0])
-    StateCov = np.eye(12)*0.00001
+    StateCov = np.eye(12)*0.1
     SensorCov = np.eye(12)*0.00001
     jf = quad_jfx
 
