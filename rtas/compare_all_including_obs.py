@@ -34,7 +34,7 @@ elif args.sim == 'vessel_bias':
 baselines = ['none', 'lp', 'lqr', 'ssr', 'mpc', 'mpc_obs'] # For LP, use cp.ECOS solver for cstr but cp.OSQP solver for quadrotor
 if 'mpc' not in baselines:
     deadline_for_all_methods = 100
-colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue'}
+colors = {'none': 'red', 'lp': 'cyan', 'lqr': 'green', 'ssr': 'orange', 'mpc': 'blue', 'mpc_obs': 'blue'}
 result = {}  
 overhead_dict = {}
 
@@ -116,15 +116,15 @@ for exp in exps:
 
                     # EKF
                     xs_privileged = exp.model.states[exp.attack_start_index:i+1] # starting after x_0_privileged because x_0_privileged is given to EKF as a separate argument
-                    print(f'{us.shape=}')
-                    print(f'{xs_privileged.shape=}')
+                    # print(f'{us.shape=}')
+                    # print(f'{xs_privileged.shape=}')
                     ys_observed = np.array([exp.C_during_atk @ x for x in xs_privileged])
-                    print(f'{ys_observed.shape=}')
+                    # print(f'{ys_observed.shape=}')
                     # if i == exp.recovery_index:
                     xs_estimated, Ps = EKF_during_atk.multi_steps(x_0_privileged, P_0, us, ys_observed)
-                    print(f'{xs_estimated.shape=}')
-                    print(f'{Ps.shape=}')
-                    exit()
+                    # print(f'{xs_estimated.shape=}')
+                    # print(f'{Ps.shape=}')
+                    # exit()
 
                     x_cur_lo, x_cur_up, x_cur = non_est.estimate(x_0_privileged, us, xs_estimated, exp.unsafe_states_onehot)
                     logger.debug(f'reconstructed state={x_cur}')
@@ -548,7 +548,10 @@ for exp in exps:
         t_arr_tmp = t_arr[exp.recovery_index:end_time+1]
         output = [x[exp.output_index] for x in exp_rst[bl]['outputs'][exp.recovery_index:end_time+1]]
         # output = [x[exp.output_index] for x in exp_rst[bl]['states'][exp.recovery_index:end_time + 1]]
-        plt.plot(t_arr_tmp, output, color=colors[bl], label=bl)
+        if bl == 'mpc_obs':
+            plt.plot(t_arr_tmp, output, color=colors[bl], label=bl, linestyle='dashed')
+        else:
+            plt.plot(t_arr_tmp, output, color=colors[bl], label=bl)
 
     if exp.y_lim:
         plt.ylim(exp.y_lim)
@@ -561,8 +564,8 @@ for exp in exps:
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
     os.makedirs(f'fig', exist_ok=True)
-    plt.savefig(f'fig/{exp.name}_all.png', format='png', bbox_inches='tight')
+    plt.savefig(f'fig/{exp.name}_all_including_obs.png', format='png', bbox_inches='tight')
 
-    with open("fig/overhead.txt", "w") as file:
+    with open("fig/overhead_including_obs.txt", "w") as file:
         file.write(json.dumps(overhead_dict))
     # plt.show()
