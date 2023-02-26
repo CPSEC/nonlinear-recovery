@@ -561,7 +561,8 @@ for exp in exps:
     plt.xlabel('Time [sec]', loc='right', labelpad=-55)
     plt.legend()
     os.makedirs(f'fig', exist_ok=True)
-    EKF_suffix = f'including_obs_{exp.StateCov[0,0]}QinEKF_{exp.SensorCov[0,0]}RinEKF'
+    os.makedirs(f'fig/with_EKF', exist_ok=True)
+    EKF_suffix = f'including_obs_{exp.noise_term}disturbance' #+f'_{exp.StateCov[0,0]}QinEKF_{exp.SensorCov[0,0]}RinEKF'
     plt.savefig(f'fig/with_EKF/{exp.name}_all_{EKF_suffix}.png', format='png', bbox_inches='tight')
 
     with open(f"fig/with_EKF/overhead_{EKF_suffix}.txt", "w") as file:
