@@ -6,7 +6,7 @@ sys.path.append('../')
 from simulators.linear.motor_speed import MotorSpeed
 from simulators.linear.quadruple_tank import QuadrupleTank
 from simulators.nonlinear.continuous_stirred_tank_reactor import CSTR, cstr_imath
-from simulators.nonlinear.quad import quadrotor, quad_imath
+from simulators.nonlinear.quad import quadrotor, quad_imath, quad, quad_jfx
 from simulators.nonlinear.inverted_pendulum import InvertedPendulum, inverted_pendulum_imath
 from simulators.nonlinear.vessel import VESSEL, deg2rad, heading_circle, kn2ms, whole_model_imath
 from utils.attack import Attack
@@ -222,6 +222,13 @@ class quad_bias:
     u_ss = np.array([9.81])
     x_ss = np.array([0,0,0,0,0,0,0,0,5,0,0,0])
 
+    # for EKF
+    C_during_atk = np.diag([0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0])
+    f = lambda x, u, dt: x + dt * quad(None, x, u)
+    jh = lambda x, u, dt: np.diag([0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0])
+    StateCov = np.eye(12)*0.001
+    SensorCov = np.eye(12)*0.001
+    jf = quad_jfx
 
     # -------------------- Inverted Pendulum ----------------------------
 class pendulum_bias:
