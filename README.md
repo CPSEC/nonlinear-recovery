@@ -22,7 +22,7 @@ For quadrotor recovery with observer.
 ```
 python compare_all_including_obs.py
 ```
-The above will reproduce the middle plot in Figure 8.
+The above will reproduce the right plot in Figure 12.
 
 For sensitivity analysis, change the settings in each class in rtas/settings.py. Rerun the above lines to reproduce the plots for the new settings.
 
