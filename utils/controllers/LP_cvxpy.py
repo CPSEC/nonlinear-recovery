@@ -147,7 +147,7 @@ class LP(Controller):
             self.formulate()
         else:
             self.formulate_only_x0()
-        self.prob.solve(solver=self.solver, warm_start=True)
+        self.prob.solve(solver=self.solver, max_iter=10000, warm_start=True)
 
         if self.prob.status != cp.OPTIMAL:
             print('did not get an optimal solution!')

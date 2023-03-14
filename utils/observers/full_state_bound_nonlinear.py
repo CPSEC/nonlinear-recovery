@@ -22,7 +22,7 @@ class NonlinearEstimator:
         x_0 = [midpoint(Int) for Int in x_0_interval]
         return np.array(x_0_lo), np.array(x_0_up), np.array(x_0)
 
-    def get_deadline(self, x_a, safe_set_lo, safe_set_up, control: np.array, max_k):
+    def get_deadline(self, x_a, safe_set_lo, safe_set_up, control: np.array, max_k, verbose=True):
         k = max_k
         breaked = False
         for i in range(max_k):
@@ -31,7 +31,8 @@ class NonlinearEstimator:
             state_series = None # Not using safe states for deadline
             unsafe_states_onehot = [1] * len(x_a)
             x_0_lo, x_0_up, x_0 = self.estimate(x_a, control_series, state_series, unsafe_states_onehot)
-            print(f'within deadline computation... @ {i=}/{max_k}, {x_0_lo=} and {x_0_up=} and {x_0=}\n')
+            if verbose:
+                print(f'within deadline computation... @ {i=}/{max_k}, {x_0_lo=} and {x_0_up=} and {x_0=}\n')
             for j in range(np.size(x_a, 0)):
                 if safe_set_lo[j] < x_0_lo[j] < safe_set_up[j] and safe_set_lo[j] < x_0_up[j] < safe_set_up[j]:
                     pass
