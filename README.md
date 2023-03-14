@@ -17,12 +17,12 @@ python compare_all.py --sim quad_bias
 python compare_all.py --sim vessel_bias
 ```
 
-For quadrotor recovery with observer (Figure 12; right).
+For quadrotor recovery with observer (Figure 12; right). Plots will be saved in rtas/fig/with_EKF/.
 ```
 python compare_all_including_obs.py
 ```
 
-For overhead box plots (Figure 13).
+For overhead box plots (Figure 13). The plot will be saved in rtas/fig/with_EKF/.
 ```
 python compare_all_including_obs_and_overhead.py
 ```
