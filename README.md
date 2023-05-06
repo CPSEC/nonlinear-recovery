@@ -1,6 +1,6 @@
 # Real-Time Data-Predictive Attack-Recovery for Complex Cyber-Physical Systems
 
-This repository contains the code for our RTAS 2023 paper.
+This repository contains the code for the RTAS 2023 paper available at https://ieeexplore.ieee.org/abstract/document/9984726
 
 ## Setup
 Install required python packages.
